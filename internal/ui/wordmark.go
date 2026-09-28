@@ -10,25 +10,29 @@ import (
 // literal rather than rendered from a font table — the word never changes, and
 // a table would be hundreds of lines to maintain for the same result.
 //
-// The art is 52 columns wide. Narrower terminals get the compact one-line form,
-// because wrapped ASCII art looks like a mistake.
+// The letters are upright and separated by a space on purpose. The usual
+// ANSI Shadow look for this word is slanted and sets the glyphs flush against
+// each other, where "╗██╗" runs together and the name stops being readable at
+// a glance — which is the one job a logo has to do.
+//
+// The art is 50 columns wide including the two-space indent. Narrower terminals
+// get the compact one-line form, because wrapped ASCII art looks like a mistake.
 
-const wordmark = ` ███████╗██╗   ██╗███╗   ██╗ ██████╗ ██╗   ██╗ ██████╗  ██████╗
- ██╔════╝██║   ██║████╗  ██║██╔═══██╗██║   ██║██╔══██╗██╔═══██╗
- █████╗  ██║   ██║██╔██╗ ██║██║   ██║███████║██████╔╝██║   ██║
- ██╔══╝  ██║   ██║██║╚██╗██║██║   ██║╚════██║██╔══██╗██║   ██║
- ███████╗╚██████╔╝██║ ╚████║╚██████╔╝     ██║██║  ██║╚██████╔╝
- ╚══════╝ ╚═════╝ ╚═╝  ╚═══╝ ╚═════╝      ╚═╝╚═╝  ╚═╝ ╚═════╝`
+const wordmark = `██████ ██  ██ ██  ██  █████ ██  ██ █████   ████
+██     ██████ ███ ██ ██     ██  ██ ██  ██  ██  ██
+█████   ████  ██████ ██     ██████ █████   ██  ██
+    ██   ██   ██ ███ ██     ██  ██ ██ ██   ██  ██
+██████   ██   ██  ██  █████ ██  ██ ██  ██   ████ `
 
 // wordmarkWidth is the rendered width of the art above, in columns.
-const wordmarkWidth = 52
+const wordmarkWidth = 50
 
 // wordmarkGradient tints the art line by line, fading from magenta at the top to
 // cyan at the bottom rather than printing one flat block of colour. These are
 // the raw SGR codes; p.style turns one into an escape sequence, or a no-op when
 // colour is off.
 var wordmarkGradient = []string{
-	magenta, magenta, blue, cyan, cyan, blue,
+	magenta, magenta, blue, cyan, cyan,
 }
 
 // Wordmark prints the SYNCHRO logo with an optional subtitle underneath.
@@ -52,6 +56,10 @@ func (p *Printer) Wordmark(subtitle string) {
 	if p.Width >= wordmarkWidth+2 {
 		p.Println()
 		for i, line := range strings.Split(wordmark, "\n") {
+			// The O is narrower than the other glyphs, so the bottom row ends in
+			// padding. Trimming keeps trailing whitespace out of diffs and out of
+			// anything that copies the terminal buffer.
+			line = strings.TrimRight(line, " ")
 			if i < len(wordmarkGradient) {
 				line = p.style(line, wordmarkGradient[i])
 			}

@@ -1,11 +1,10 @@
 <pre>
- ███████╗██╗   ██╗███╗   ██╗ ██████╗ ██╗   ██╗ ██████╗  ██████╗
- ██╔════╝██║   ██║████╗  ██║██╔═══██╗██║   ██║██╔══██╗██╔═══██╗
- █████╗  ██║   ██║██╔██╗ ██║██║   ██║███████║██████╔╝██║   ██║
- ██╔══╝  ██║   ██║██║╚██╗██║██║   ██║╚════██║██╔══██╗██║   ██║
- ███████╗╚██████╔╝██║ ╚████║╚██████╔╝     ██║██║  ██║╚██████╔╝
- ╚══════╝ ╚═════╝ ╚═╝  ╚═══╝ ╚═════╝      ╚═╝╚═╝  ╚═╝ ╚═════╝
-  v0.1.0  ·  free, local, open source
+██████ ██  ██ ██  ██  █████ ██  ██ █████   ████
+██     ██████ ███ ██ ██     ██  ██ ██  ██  ██  ██
+█████   ████  ██████ ██     ██████ █████   ██  ██
+    ██   ██   ██ ███ ██     ██  ██ ██ ██   ██  ██
+██████   ██   ██  ██  █████ ██  ██ ██  ██   ████
+ v0.1.0  ·  free, local, open source
 </pre>
 
 # synchro-cli
@@ -25,12 +24,11 @@ read, diff, back up, script against, or delete.
 ```
 $ synchro-cli
 
-  ███████╗██╗   ██╗███╗   ██╗ ██████╗ ██╗   ██╗ ██████╗  ██████╗
-  ██╔════╝██║   ██║████╗  ██║██╔═══██╗██║   ██║██╔══██╗██╔═══██╗
-  █████╗  ██║   ██║██╔██╗ ██║██║   ██║███████║██████╔╝██║   ██║
-  ██╔══╝  ██║   ██║██║╚██╗██║██║   ██║╚════██║██╔══██╗██║   ██║
-  ███████╗╚██████╔╝██║ ╚████║╚██████╔╝     ██║██║  ██║╚██████╔╝
-  ╚══════╝ ╚═════╝ ╚═╝  ╚═══╝ ╚═════╝      ╚═╝╚═╝  ╚═╝ ╚═════╝
+  ██████ ██  ██ ██  ██  █████ ██  ██ █████   ████
+  ██     ██████ ███ ██ ██     ██  ██ ██  ██  ██  ██
+  █████   ████  ██████ ██     ██████ █████   ██  ██
+      ██   ██   ██ ███ ██     ██  ██ ██ ██   ██  ██
+  ██████   ██   ██  ██  █████ ██  ██ ██  ██   ████
   v0.1.0  ·  free, local, open source
 
   No account, no subscription, no server. Your data lives in ~/.synchro
@@ -43,7 +41,7 @@ $ synchro-cli
 The logo is drawn with block characters and tinted top-to-bottom when your
 terminal has colour on. It is skipped when output is piped into a file or
 another program, and collapses to a single spaced line in terminals narrower
-than 54 columns. Force or suppress it with `SYNCHRO_BANNER=always` or
+than 52 columns. Force or suppress it with `SYNCHRO_BANNER=always` or
 `SYNCHRO_BANNER=never`, and reprint it inside the shell with `/banner`.
 
 ## Contents
