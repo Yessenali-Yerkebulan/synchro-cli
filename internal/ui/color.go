@@ -118,29 +118,12 @@ func nearestBasic(c rgb) string {
 	return best
 }
 
-// gradientStops is how many distinct shades a gradient is quantised into. Enough
-// that the fade reads as smooth, few enough that a run of adjacent blocks shares
-// a single escape sequence instead of carrying one per character.
-const gradientStops = 48
-
-// shade samples a multi-stop gradient at t, which runs 0..1 across the stops.
-func shade(stops []rgb, t float64) rgb {
-	if len(stops) == 0 {
-		return rgb{}
+// lit scales a colour by k, clamping to the 8-bit range. Used to shade the rows
+// of the wordmark as though the word were lit from above.
+func lit(c rgb, k float64) rgb {
+	scale := func(v uint8) uint8 {
+		n := int(math.Round(float64(v) * k))
+		return uint8(maxInt(0, min(255, n)))
 	}
-	if len(stops) == 1 {
-		return stops[0]
-	}
-	t = math.Max(0, math.Min(1, t))
-	at := t * float64(len(stops)-1)
-	i := int(at)
-	if i >= len(stops)-1 {
-		return stops[len(stops)-1]
-	}
-	f := at - float64(i)
-	a, b := stops[i], stops[i+1]
-	blend := func(x, y uint8) uint8 {
-		return uint8(math.Round(float64(x) + (float64(y)-float64(x))*f))
-	}
-	return rgb{blend(a.r, b.r), blend(a.g, b.g), blend(a.b, b.b)}
+	return rgb{scale(c.r), scale(c.g), scale(c.b)}
 }

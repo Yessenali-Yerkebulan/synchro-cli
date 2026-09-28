@@ -90,36 +90,88 @@ func TestWordmarkHasNoTrailingWhitespace(t *testing.T) {
 	}
 }
 
-// The colour at the left edge should be violet-ish and the colour at the right
-// edge green-ish, which is what makes the word sweep through the palette.
-func TestGradientRunsVioletToGreen(t *testing.T) {
-	t.Setenv("COLORTERM", "truecolor")
-	if got := resolveColorModel(); got != modelTrue {
-		t.Fatalf("expected truecolor, got %v", got)
+// The word is seven letters and must have a colour for each of them: a shorter
+// slice would leave the last glyph taking the previous letter's hue.
+func TestOneHuePerLetter(t *testing.T) {
+	if len(wordmarkHues) != wordmarkLetters {
+		t.Fatalf("have %d hues for %d letters", len(wordmarkHues), wordmarkLetters)
 	}
-	left := shade(wordmarkStops, 0)
-	right := shade(wordmarkStops, 1)
-	if left.b <= left.g {
-		t.Errorf("left stop %v is not violet", left)
+	seen := map[string]bool{}
+	for i, c := range wordmarkHues {
+		if c.r == 0 && c.g == 0 && c.b == 0 {
+			t.Errorf("letter %d has no colour", i)
+		}
+		seen[c.code(modelTrue)] = true
 	}
-	if right.g <= right.r || right.g <= right.b {
-		t.Errorf("right stop %v is not green", right)
-	}
-	mid := shade(wordmarkStops, 0.5)
-	if mid.r < 200 || mid.g < 150 || mid.b > 90 {
-		t.Errorf("middle stop %v is not yellow", mid)
+	if len(seen) != wordmarkLetters {
+		t.Errorf("letters share colours: %d distinct of %d", len(seen), wordmarkLetters)
 	}
 }
 
-func TestShadeClampsOutOfRange(t *testing.T) {
-	if got := shade(wordmarkStops, -1); got != wordmarkStops[0] {
-		t.Errorf("t=-1 gave %v, want the first stop", got)
+// The word has to open cool and close cool: violet at the S, green at the O.
+func TestHuesRunVioletToGreen(t *testing.T) {
+	first, last := wordmarkHues[0], wordmarkHues[len(wordmarkHues)-1]
+	if first.b <= first.g {
+		t.Errorf("first letter %v is not violet", first)
 	}
-	if got := shade(wordmarkStops, 2); got != wordmarkStops[len(wordmarkStops)-1] {
-		t.Errorf("t=2 gave %v, want the last stop", got)
+	if last.g <= last.r || last.g <= last.b {
+		t.Errorf("last letter %v is not green", last)
 	}
-	if got := shade(wordmarkStops, 0); got != wordmarkStops[0] {
-		t.Errorf("t=0 gave %v, want the first stop", got)
+}
+
+// The top row is the bright one. If the rows came out flat the word would read
+// as coloured text rather than as something lit.
+func TestRowsAreLitFromAbove(t *testing.T) {
+	if len(wordmarkLight) != len(strings.Split(wordmark, "\n")) {
+		t.Fatalf("have %d light levels for %d rows", len(wordmarkLight), len(strings.Split(wordmark, "\n")))
+	}
+	top, bottom := wordmarkLight[0], wordmarkLight[len(wordmarkLight)-1]
+	if top <= bottom {
+		t.Errorf("top row is not the brightest: top=%v bottom=%v", top, bottom)
+	}
+	// A letter must actually change with the row, or the shading does nothing.
+	if lit(wordmarkHues[2], top) == lit(wordmarkHues[2], bottom) {
+		t.Error("shading a letter left it unchanged")
+	}
+}
+
+func TestLitClampsOutOfRange(t *testing.T) {
+	if got := lit(rgb{200, 128, 40}, 2); got != (rgb{255, 255, 80}) {
+		t.Errorf("saturating lit gave %v", got)
+	}
+	if got := lit(rgb{200, 128, 40}, 0); got != (rgb{0, 0, 0}) {
+		t.Errorf("zero lit gave %v", got)
+	}
+	if got := lit(rgb{200, 128, 40}, 1); got != (rgb{200, 128, 40}) {
+		t.Errorf("lit by 1 changed the colour: %v", got)
+	}
+}
+
+// Every cell of a letter must resolve to one and the same colour, which is the
+// whole point of colouring per letter instead of per column.
+func TestEachLetterIsOneFlatColour(t *testing.T) {
+	t.Setenv("COLORTERM", "truecolor")
+	stride := (48 + 1) / wordmarkLetters
+	row := strings.Split(wordmark, "\n")[0]
+	byLetter := map[int]map[string]bool{}
+	for col, r := range []rune(row) {
+		if r == ' ' {
+			continue
+		}
+		letter := col / stride
+		got := lit(wordmarkHues[letter], wordmarkLight[0]).code(modelTrue)
+		if byLetter[letter] == nil {
+			byLetter[letter] = map[string]bool{}
+		}
+		byLetter[letter][got] = true
+	}
+	for letter, codes := range byLetter {
+		if len(codes) != 1 {
+			t.Errorf("letter %d has %d colours in one row: %v", letter, len(codes), codes)
+		}
+	}
+	if len(byLetter) != wordmarkLetters {
+		t.Errorf("row covered %d letters, want %d", len(byLetter), wordmarkLetters)
 	}
 }
 

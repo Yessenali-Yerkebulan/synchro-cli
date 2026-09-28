@@ -38,16 +38,20 @@ $ synchro-cli
 > design a habit tracker with streaks and a weekly view
 ```
 
-The logo is drawn with block characters and swept left to right through a
-violet → yellow → green gradient. It is skipped when output is piped into a
-file or another program, and collapses to a single spaced line in terminals
-narrower than 52 columns. Force or suppress it with `SYNCHRO_BANNER=always` or
-`SYNCHRO_BANNER=never`, and reprint it inside the shell with `/banner`.
+The logo is drawn with block characters. Each letter gets its own neon colour
+— violet, indigo, azure, sky, cyan, spring green, green — and the five rows are
+shaded from bright at the top to deep at the bottom, so the word reads as lit
+from above rather than as flat coloured text.
 
-The gradient interpolates real 24-bit colour where the terminal has it, drops to
-the 256-colour palette where that is all there is, and finally to the classic 8
-colours, where violet shows up as magenta because the basic set has no purple of
-its own. Set `NO_COLOR` or `SYNCHRO_COLOR=never` for plain uncoloured text.
+It is skipped when output is piped into a file or another program, and collapses
+to a single spaced line in terminals narrower than 52 columns. Force or suppress
+it with `SYNCHRO_BANNER=always` or `SYNCHRO_BANNER=never`, and reprint it inside
+the shell with `/banner`.
+
+The colour is picked from what the terminal advertises: 24-bit where it is
+available, the 256-colour palette where that is all there is, and the classic 8
+colours as a last resort. Set `NO_COLOR` or `SYNCHRO_COLOR=never` for plain
+uncoloured text.
 
 ## Contents
 
