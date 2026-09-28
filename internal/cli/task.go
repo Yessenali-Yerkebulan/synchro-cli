@@ -2,6 +2,7 @@ package cli
 
 import (
 	"fmt"
+	"strconv"
 	"strings"
 
 	"github.com/spf13/cobra"
@@ -76,7 +77,7 @@ func newTaskCmd(st *rootState) *cobra.Command {
 			}
 			a.P.Table([]string{"#", "ID", "STATUS", "AGENT", "TITLE", ""}, rows)
 			a.P.Blank()
-			a.P.Hint("run one with: synchro task run <id>    ·    read one: synchro task show <id>")
+			a.P.Hint("run one with: synchro task run <#|id>    ·    read one: synchro task show <#|id>")
 			return nil
 		},
 	}
@@ -120,8 +121,9 @@ func newTaskCmd(st *rootState) *cobra.Command {
 	newCmd.Flags().StringVar(&priority, "priority", "", "low, normal, high")
 
 	runCmd := &cobra.Command{
-		Use:   "run [task-id]",
+		Use:   "run [task]",
 		Short: "Run a task with its assigned agent",
+		Long:  "Accepts the row number from `synchro task`, a task id, or a task title.",
 		Args:  cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			a, err := st.app()
@@ -130,9 +132,9 @@ func newTaskCmd(st *rootState) *cobra.Command {
 			}
 			var t *model.Task
 			if len(args) == 1 {
-				t, err = a.Store.Task(args[0])
+				t, err = a.resolveTask(args[0])
 				if err != nil {
-					return fmt.Errorf("no task with id or title %q", args[0])
+					return err
 				}
 			} else {
 				list := a.Store.Tasks("")
@@ -151,17 +153,18 @@ func newTaskCmd(st *rootState) *cobra.Command {
 	}
 
 	showCmd := &cobra.Command{
-		Use:   "show <task-id>",
+		Use:   "show <task>",
 		Short: "Show a task and its full result",
+		Long:  "Accepts the row number from `synchro task`, a task id, or a task title.",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			a, err := st.app()
 			if err != nil {
 				return err
 			}
-			t, err := a.Store.Task(args[0])
+			t, err := a.resolveTask(args[0])
 			if err != nil {
-				return fmt.Errorf("no task with id or title %q", args[0])
+				return err
 			}
 			a.P.Title(t.Title)
 			a.P.Blank()
@@ -180,7 +183,16 @@ func newTaskCmd(st *rootState) *cobra.Command {
 			}
 			if t.Result == nil {
 				a.P.Blank()
-				a.P.Info("this task has not been run yet")
+				switch t.Status {
+				case model.StatusFailed:
+					// The error above already explains the failure; repeating it
+					// as "not run yet" would contradict the status.
+					a.P.Hint("run it again with: synchro task run %s", t.ID)
+				case model.StatusRunning:
+					a.P.Info("this task is running. If no process is working on it, re-run it with: synchro task run %s", t.ID)
+				default:
+					a.P.Info("this task has not been run yet")
+				}
 				return nil
 			}
 			if len(t.Result.Sources) > 0 {
@@ -202,12 +214,15 @@ func newTaskCmd(st *rootState) *cobra.Command {
 				for _, f := range t.Result.Files {
 					lines := strings.Count(f.Content, "\n") + 1
 					commit := "not committed"
-					if t.Result.Repo != nil {
+					switch {
+					case t.Result.Repo != nil:
 						commit = "commit " + t.Result.Repo.Commit
+					case t.Result.RepoUnchanged:
+						commit = "unchanged"
 					}
 					a.P.Printf("    %s %s %s\n", a.P.Bold(f.Path), a.P.Gray(fmt.Sprintf("(%d lines)", lines)), a.P.Gray(commit))
 				}
-				if t.Result.Repo == nil {
+				if t.Result.Repo == nil && !t.Result.RepoUnchanged {
 					a.P.Blank()
 					a.P.Hint("commit them with: synchro commit %s", t.ID)
 				}
@@ -217,18 +232,19 @@ func newTaskCmd(st *rootState) *cobra.Command {
 	}
 
 	rmCmd := &cobra.Command{
-		Use:     "rm <task-id>",
+		Use:     "rm <task>",
 		Aliases: []string{"remove", "delete", "del"},
 		Short:   "Delete a task",
+		Long:    "Accepts the row number from `synchro task`, a task id, or a task title.",
 		Args:    cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			a, err := st.app()
 			if err != nil {
 				return err
 			}
-			t, err := a.Store.Task(args[0])
+			t, err := a.resolveTask(args[0])
 			if err != nil {
-				return fmt.Errorf("no task with id or title %q", args[0])
+				return err
 			}
 			if !confirm(a, st.opt.Yes, fmt.Sprintf("delete task %q?", t.Title)) {
 				a.P.Info("cancelled")
@@ -244,6 +260,55 @@ func newTaskCmd(st *rootState) *cobra.Command {
 
 	cmd.AddCommand(newCmd, runCmd, showCmd, rmCmd)
 	return cmd
+}
+
+// resolveTask accepts what the user is most likely to have on screen: the row
+// number from `task list` (with or without "#"), a full id, or a title.
+//
+// The number is resolved against the same ordering `task list` prints, so the
+// "#" column is never a lie. Ids win over numbers only because they cannot
+// collide; a numeric title is still reachable through its id.
+func (a *App) resolveTask(ref string) (*model.Task, error) {
+	if n, ok := taskListIndex(ref); ok {
+		tasks := a.visibleTasks()
+		if n >= 1 && n <= len(tasks) {
+			return &tasks[n-1], nil
+		}
+		return nil, fmt.Errorf("no task #%d — the list has %d. Run `synchro task` to see them", n, len(tasks))
+	}
+	t, err := a.Store.Task(ref)
+	if err != nil {
+		return nil, fmt.Errorf("no task with #, id or title %q", ref)
+	}
+	return t, nil
+}
+
+// visibleTasks lists the tasks of the current project, or every task when no
+// project is selected. It mirrors the ordering used by `task list`.
+func (a *App) visibleTasks() []model.Task {
+	p, err := a.resolveProject()
+	if err != nil || p == nil {
+		return a.Store.Tasks("")
+	}
+	return a.Store.Tasks(p.ID)
+}
+
+// taskListIndex reports whether ref is a row number and returns it 1-based.
+func taskListIndex(ref string) (int, bool) {
+	s := strings.TrimPrefix(strings.TrimSpace(ref), "#")
+	if s == "" {
+		return 0, false
+	}
+	for _, r := range s {
+		if r < '0' || r > '9' {
+			return 0, false
+		}
+	}
+	n, err := strconv.Atoi(s)
+	if err != nil {
+		return 0, false
+	}
+	return n, true
 }
 
 // requireProjectForTask resolves the project a task belongs to, or explains how
