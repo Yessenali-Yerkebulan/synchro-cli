@@ -178,9 +178,11 @@ func (e *Engine) RunTask(ctx context.Context, task *model.Task, agent *model.Age
 			for _, f := range files {
 				result.Files = append(result.Files, model.CodeFile{Path: f.Path, Content: f.Content})
 			}
-			if info := e.maybeCommit(task, agent, result.Files); info != nil {
+			info, unchanged := e.maybeCommit(task, agent, result.Files)
+			if info != nil {
 				result.Repo = info
 			}
+			result.RepoUnchanged = unchanged
 		}
 	}
 
@@ -192,7 +194,7 @@ func (e *Engine) RunTask(ctx context.Context, task *model.Task, agent *model.Age
 // auto-commit is on, and returns the commit info. Failures are swallowed: the
 // files on the result remain the source of truth, and a git problem should not
 // turn a successful run into a failed task.
-func (e *Engine) maybeCommit(task *model.Task, agent *model.Agent, files []model.CodeFile) *model.RepoInfo {
+func (e *Engine) maybeCommit(task *model.Task, agent *model.Agent, files []model.CodeFile) (*model.RepoInfo, bool) {
 	enabled := false
 	if e.AutoCommit != nil {
 		enabled = *e.AutoCommit
@@ -202,13 +204,18 @@ func (e *Engine) maybeCommit(task *model.Task, agent *model.Agent, files []model
 		}
 	}
 	if !enabled {
-		return nil
+		return nil, false
 	}
 	info, err := repo.WriteFiles(e.Store.ReposDir(), task.ProjectID, files, task.Title)
-	if err != nil || info == nil {
-		return nil
+	if err != nil {
+		return nil, false
 	}
-	return &model.RepoInfo{Commit: info.Commit, Path: info.Path}
+	if info == nil {
+		// Auto-commit is on but the files came back identical, so there was
+		// nothing to commit. Say so rather than implying a commit is pending.
+		return nil, true
+	}
+	return &model.RepoInfo{Commit: info.Commit, Path: info.Path}, false
 }
 
 // CommitFiles commits a task's previously generated files on demand, which is
