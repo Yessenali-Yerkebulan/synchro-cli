@@ -225,10 +225,14 @@ func (a *App) runPipeline(p *model.Project, pm agents.PipelineMode, stages []age
 
 	e := a.NewEngine()
 	var currentLabel string
+	// The prefix names the speaker, so it belongs once per stage rather than
+	// in front of every streamed chunk.
+	needsPrefix := true
 	e.OnDelta = func(text string) {
-		// Stream the active stage's answer inline, prefixed so the reader
-		// always knows who is talking.
-		_, _ = fmt.Fprint(a.P.Out, a.P.Gray("  ")+currentLabel+"> ")
+		if needsPrefix {
+			_, _ = fmt.Fprint(a.P.Out, a.P.Gray("  ")+currentLabel+"> ")
+			needsPrefix = false
+		}
 		_, _ = fmt.Fprint(a.P.Out, text)
 	}
 	e.OnStage = func(s agents.Stage, phase string) {
@@ -236,10 +240,12 @@ func (a *App) runPipeline(p *model.Project, pm agents.PipelineMode, stages []age
 		case agents.PhaseStart:
 			a.P.Printf("\n%s %s %s\n", a.P.Gray("▸"), a.P.Bold(s.Label), a.P.Gray(fmt.Sprintf("· %s", s.Agent.Role)))
 			currentLabel = s.Label
+			needsPrefix = true
 		case agents.PhaseFinish:
 			if s.Agent != nil {
 				a.P.Printf("\n")
 			}
+			needsPrefix = true
 		}
 	}
 
