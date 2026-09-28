@@ -1,37 +1,70 @@
 # synchro
 
-An AI team in your terminal.
+An AI team that works from your terminal.
 
-Give it a goal. A product manager plans it, a researcher grounds it in real
-sources, a developer writes the code and commits it to git, and a reviewer finds
-the problems before you do.
+You describe a goal. A product manager turns it into a spec, a researcher
+grounds that spec in real sources, a developer writes the code and commits it
+to git, and a QA agent attacks the result before you ever read it. The output of
+each agent is the input of the next — no copy-pasting between prompts, no
+context window you have to babysit.
 
-No account. No subscription. No server. Everything lives in `~/.synchro` as
-plain JSON, and a local [Ollama](https://ollama.com) install is enough to run
-all of it — free, unlimited, and offline.
+It is a single Go binary. There is no account, no subscription, no server, and
+no database. Everything it knows lives in `~/.synchro` as plain JSON that you can
+read, diff, back up, script against, or delete.
 
 ```
 $ synchro
 
   * SYNCHRO  v0.1.0 - free, local, open source
-  No account, no subscription, no server.
 
   default > MVP Builder > Product Lead (PRODUCT_MANAGER, ollama/qwen3)
   type a task, or /help for commands
 
-> design a habit tracker and build it
+> design a habit tracker with streaks and a weekly view
 ```
+
+## Contents
+
+- [Why](#why)
+- [Install](#install)
+- [Getting a model](#getting-a-model)
+- [Quick start](#quick-start)
+- [How the model fits together](#how-the-model-fits-together)
+- [The interactive shell](#the-interactive-shell)
+- [Pipelines](#pipelines)
+- [Workflows](#workflows)
+- [Generated code and git](#generated-code-and-git)
+- [Command reference](#command-reference)
+- [Providers](#providers)
+- [Where your data lives](#where-your-data-lives)
+- [What is optional](#what-is-optional)
+- [Scripting](#scripting)
+- [Development](#development)
+- [License](#license)
+
+## Why
+
+A single chatbot gives you one opinion, in one pass, with no memory of what it
+said three prompts ago. Real work is not like that. Somebody has to check the
+facts. Somebody has to decide what to build. Somebody has to write it. Somebody
+has to check the work.
+
+Synchro is that sequence, made repeatable. The difference is not that the models
+are smarter — it is that the roles are separated, each one is prompted for what
+it is actually good at, and each one hands a concrete result to the next. A
+developer agent is asked for named files rather than prose, so what it "wrote"
+is real code in a real repository with a real commit.
 
 ## Install
 
-Requires Go 1.22 or newer. There are no other dependencies, and no database,
-container or service to run.
+Requires **Go 1.27.1 or newer**. There are no other dependencies — no runtime, no
+container, no service to keep alive.
 
 ```sh
 go install github.com/synchro/synchro-cli@latest
 ```
 
-Or build from a clone:
+Or from a clone:
 
 ```sh
 git clone https://github.com/synchro/synchro-cli
@@ -39,66 +72,108 @@ cd synchro-cli
 go build -o synchro .
 ```
 
-Then set up a model:
+Check it:
 
 ```sh
-synchro init        # finds Ollama, offers a free cloud key, creates a team
-synchro doctor      # checks what is and isn't ready
+synchro version
+synchro doctor
 ```
 
 ## Getting a model
 
-**Ollama (recommended).** Runs on your machine, needs no key, no card, and
-works with the network off.
+Synchro talks to whatever model you point it at. Four of the options cost
+nothing.
+
+**Ollama — local, and the default.** Runs on your machine, needs no key, no
+card, no account, and keeps working with the network unplugged. This is the
+recommended setup.
 
 ```sh
 ollama pull qwen3          # or llama3.2, gemma3, mistral
 synchro init
 ```
 
-**A free cloud key**, if you want faster and stronger models. All three of
-these have a free tier and none ask for a card:
+**Free cloud tiers**, if you want faster or stronger models. None of these ask
+for a card:
 
-| Provider | Free how | Key |
+| Provider | Why it is free | Where to get the key |
 | --- | --- | --- |
 | Gemini | Generative Language API free tier | https://aistudio.google.com/apikey |
 | OpenRouter | any model whose id ends in `:free` | https://openrouter.ai/keys |
-| Groq | free tier, very fast | https://console.groq.com/keys |
+| Groq | free tier, very low latency | https://console.groq.com/keys |
 
 ```sh
 synchro keys set gemini
-synchro models            # see which models cost nothing
+synchro models              # which models cost nothing
 ```
 
-OpenAI, Anthropic and DeepSeek are supported too. Nothing is gated: a paid
-provider is just your own key and your own bill, and synchro tells you when a
-model is not free rather than quietly spending your money.
+OpenAI, Anthropic and DeepSeek are supported as well. Nothing is gated behind a
+plan: a paid provider is simply your key and your bill. Synchro labels which
+models are free rather than quietly spending your money.
 
-## The model
+## Quick start
+
+```sh
+# 1. detect a model, optionally store a free key, create a workspace and a team
+synchro init
+
+# 2. give the team somewhere to put code
+synchro project new "habit tracker" --category saas
+
+# 3. let the whole team loose on a goal
+synchro pipeline "a habit tracker with streaks and a weekly view"
+```
+
+That last command runs `RESEARCHER → PRODUCT_MANAGER → DEVELOPER → QA`. The
+developer writes real files into a git repository and commits them; you get a
+diff to read instead of a paragraph to skim.
+
+`init` is not the only way to start. If you would rather work step by step, run
+`synchro` on its own for the interactive shell, or send one task to one agent:
+
+```sh
+synchro run "summarise the tradeoffs of SQLite vs Postgres for this repo"
+```
+
+## How the model fits together
 
 ```
 workspace
-└── team          a set of agents with a role each
-    └── agent     researcher / product manager / developer / QA / critic / ...
+└── team           a group of agents, one role each
+    └── agent      researcher / product manager / developer / QA / critic / ...
         └── project    where generated code accumulates, committed to git
-            └── task   one piece of work
+            └── task       one unit of work and its result
 ```
 
-A team also owns **workflows**: a graph of agents, with dependencies between
-them, retry policies and per-node backoff.
+A **role** is not a label. It decides behaviour:
 
-Starter templates, from `synchro team templates`:
+| Role | What it does |
+| --- | --- |
+| `RESEARCHER` | grounds its answer in live web search, with sources |
+| `PRODUCT_MANAGER` | turns a rough idea into a spec someone could build from |
+| `DEVELOPER` | answers with real files, written to the project repo and committed |
+| `QA` | reviews another agent's work for concrete bugs |
+| `MARKETER` | plans campaigns and positioning |
+| `CRITIC` | attacks the weakest assumption in a draft |
+| `CEO`, `SYNTHESIZER`, `VALIDATOR` | summarise, combine, and check output |
 
-- `mvp` — research, spec, build, review
-- `development` — spec a feature, build it, test it
-- `research-product` — research a market, recommend, stress-test
-- `marketing` — research, plan a campaign, critique it
-- `solo` — one all-round agent
+Teams can also own **workflows**: a graph of agents with dependencies between
+them, retries, and per-node backoff.
 
-## The shell
+Ready-made teams, from `synchro team templates`:
 
-Run `synchro` with no arguments to get the interactive prompt. Anything that
-isn't a slash command is treated as a task for the active agent.
+| Template | Chain |
+| --- | --- |
+| `mvp` | PRODUCT_MANAGER → RESEARCHER → DEVELOPER → QA |
+| `development` | PRODUCT_MANAGER → DEVELOPER → QA |
+| `research-product` | RESEARCHER → PRODUCT_MANAGER → CRITIC |
+| `marketing` | RESEARCHER → MARKETER → CRITIC |
+| `solo` | DEVELOPER |
+
+## The interactive shell
+
+Run `synchro` with no arguments. Anything that is not a slash command is treated
+as a task for the active agent.
 
 ```
 /help                    list commands
@@ -117,6 +192,7 @@ isn't a slash command is treated as a task for the active agent.
 /pipeline <mode> <text>  run a specific chain (idea, build, review, ...)
 /mode <id>               set the default pipeline mode
 /wf <name> <input>       run a saved multi-agent workflow
+/wf                      list workflows
 
 /provider <name> [model] switch the active agent's model
 /models [provider]       see which models are free
@@ -124,20 +200,25 @@ isn't a slash command is treated as a task for the active agent.
 /config                  show settings
 /status                  current context and spend estimate
 /doctor                  check the setup
+/context                 redraw the context line
 /history                 list past tasks
 /reset                   clear the remembered context
+/clear                   clear the screen
 /exit                    quit
 ```
 
-The prompt always shows where you are, and remembers it between runs. `Ctrl+C`
-cancels a run in progress; a second one at the prompt quits.
+The prompt always shows where you are and remembers it between runs, so `synchro`
+reopens in the same workspace, team, agent and project you left. `Ctrl+C` cancels
+a run in progress; pressing it again at the prompt quits.
 
 ## Pipelines
 
-A pipeline runs a chain of roles, feeding each one's output into the next.
+A pipeline is a straight line: several agents in order, each one receiving the
+previous one's output.
 
 ```sh
 synchro pipeline --list
+synchro pipeline --dry-run "add dark mode"    # see who would run, run nothing
 synchro pipeline "a habit tracker with streaks and a weekly view"
 synchro pipeline --mode review "add password reset to the API"
 ```
@@ -152,19 +233,26 @@ synchro pipeline --mode review "add password reset to the API"
 | `research` | RESEARCHER |
 | `critique` | MARKETER → CRITIC |
 
+`idea` is the default. The same modes work in the shell: `/pipeline review add
+dark mode`.
+
 ## Workflows
 
-Where a pipeline is a straight line, a workflow is a graph. Nodes declare what
-they depend on, and the runner works out the order, retries failures with
-exponential backoff, and keeps the output of each node for the next.
+Where a pipeline is a line, a workflow is a graph. Each node is an agent, each
+edge says who runs next, and a node waits for all of its predecessors — so a graph
+can genuinely branch and merge.
 
 ```sh
 synchro wf new "ship it" --agents researcher,developer,qa
-synchro wf graph "ship it"
-synchro wf run "ship it" "add dark mode"
+synchro wf graph "ship it"        # also available as: wf show
+synchro wf run "ship it" --input "add dark mode"
+synchro wf show "ship it"         # graph plus run history
 ```
 
-## Generated code
+Failed nodes are retried with exponential backoff, and each run is kept in
+history so you can see what happened and when.
+
+## Generated code and git
 
 A DEVELOPER agent is asked to emit named files rather than one wall of text:
 
@@ -175,49 +263,173 @@ package main
 ```
 ````
 
-Those files are written into `~/.synchro/repos/<project>/` and committed with
-git, so what an agent built is real, reviewable history. Paths that try to
-escape the project directory are rejected, and the commit is attributed to
-`synchro` rather than to you.
+Those files are written into `~/.synchro/repos/<project>/` and committed to git,
+so what an agent built is real, reviewable history rather than a claim about
+what it built. The commit is attributed to `Synchro Developer Agent
+<agents@synchro.local>`, not to you.
 
-## Where things live
+Paths that try to escape the project directory — absolute paths, `..`, drive
+letters, UNC paths — are rejected before anything is written.
 
-`~/.synchro`, or `$SYNCHRO_HOME`, or `--home`:
+**Auto-commit is off by default.** You approve the code, then commit it
+yourself:
+
+```sh
+synchro files                # what was generated
+synchro commit <task-id>     # write it to git
+```
+
+To let developers commit on their own, enable it per workspace or globally:
+
+```sh
+synchro ws new "my workspace" --auto-commit   # this workspace
+synchro config set auto_commit true           # every new workspace
+```
+
+## Command reference
+
+Every command explains itself:
+
+```sh
+synchro <command> --help
+```
+
+The ones you will use most:
+
+| Command | What it does |
+| --- | --- |
+| `synchro` | interactive shell |
+| `synchro init` | first-time setup: model, key, workspace, team |
+| `synchro run <text>` | give the active agent a task |
+| `synchro pipeline <text>` | run a chain of agents |
+| `synchro wf <subcommand>` | build and run workflow graphs |
+| `synchro task <subcommand>` | `new`, `run`, `show`, `rm` |
+| `synchro project <subcommand>` | `new`, `use`, `show`, `rm` |
+| `synchro agent <subcommand>` | `new`, `edit`, `use`, `show`, `rm` |
+| `synchro team <subcommand>` | `new`, `from`, `use`, `templates` |
+| `synchro ws <subcommand>` | `new`, `use`, `show`, `rm` |
+| `synchro commit <task-id>` | commit a task's generated files |
+| `synchro files` | list generated code for a project |
+| `synchro report [project]` | write a Markdown delivery report |
+| `synchro models [provider]` | which models you can use, and which are free |
+| `synchro keys` | manage provider API keys |
+| `synchro config` | read and change settings |
+| `synchro doctor` | check that everything needed is working |
+| `synchro version` | print the version |
+
+Global flags work on every command: `-w/--workspace`, `-t/--team`,
+`-a/--agent`, `-p/--project` to override the active context, `--json` for
+machine-readable output, `--no-color`, `-y/--yes` to skip confirmations, and
+`--home` to point at a different state directory.
+
+Tasks can be addressed the way you see them: the row number from `synchro task`,
+the id, or the title.
+
+```sh
+synchro task
+synchro task show 3
+synchro task run 3
+```
+
+## Providers
+
+`ollama`, `gemini`, `openrouter`, `groq`, `openai`, `anthropic`, `deepseek`.
+
+```sh
+synchro models                     # curated lists, free ones first
+synchro models ollama              # one provider
+synchro models --refresh           # ask providers for their live catalogue
+synchro models --all               # include paid models
+```
+
+Keys are stored in `credentials.json` with `0600` permissions, and an existing
+environment variable of the same name (`GEMINI_API_KEY`, `OPENROUTER_API_KEY`,
+`OPENAI_API_KEY`, …) is used instead if you prefer not to store it.
+
+**Any OpenAI-compatible server works**, including a local one. Point the
+provider at it and no code change is needed:
+
+```sh
+export SYNCHRO_OPENAI_URL=http://127.0.0.1:8080/v1
+export OPENAI_API_KEY=dummy              # a local server usually ignores it
+synchro config set provider openai
+```
+
+The base URL is the only thing that uses the `SYNCHRO_` prefix, and it exists
+for every provider: `SYNCHRO_OLLAMA_URL`, `SYNCHRO_GEMINI_URL`, and so on. The
+Ollama URL is also `synchro config set ollama_url ...`.
+
+Settings you can change with `synchro config set <key> <value>`:
+
+`provider`, `model`, `ollama_url`, `temperature`, `max_tokens`, `stream`,
+`search`, `auto_commit`, `color`, `request_timeout`.
+
+## Where your data lives
+
+`~/.synchro`, or `$SYNCHRO_HOME`, or `--home <dir>`:
 
 ```
 config.json         settings
 state.json          workspaces, teams, agents, projects, tasks, workflows
 credentials.json    API keys, mode 0600
-repos/<project>/    generated code, one git repo per project
+repos/<project>/    generated code, one git repository per project
 history             shell input history
 ```
 
-All plain JSON. Read it, script it, delete it, move it to another machine.
+All plain JSON. Point `SYNCHRO_HOME` at a synced folder to move your whole setup
+between machines, or delete the directory to start over.
 
-## Everything is optional
+## What is optional
 
-- `git` is only needed to commit generated code.
-- `OLLAMA` is optional if you have a cloud key.
-- A project is optional unless you want code committed.
-- Researcher web search needs a `TAVILY_API_KEY`, and degrades to no search
-  without one.
+Nothing below is required unless you want the feature it belongs to:
 
-Run `synchro doctor` at any time to see what is ready and what is not.
+- `git` — only needed to commit generated code.
+- `ollama` — optional if you have a cloud key.
+- a project — optional unless you want code committed somewhere.
+- web search — a `RESEARCHER` grounds itself in live results when
+  `TAVILY_API_KEY` is set, and works without one, just with less grounding.
+- auto-commit — off by default; generated code waits for you.
 
-## Scripts
+`synchro doctor` tells you exactly what is ready and what is not, at any time.
 
-`--json` makes output machine-readable where a command supports it:
+## Scripting
+
+`--json` makes output machine-readable wherever it is supported:
 
 ```sh
 synchro run --json "write a README for this repo" | jq -r .output
+synchro task --json | jq -r '.[] | [.id, .status, .title] | @tsv'
+```
+
+Because the state is plain JSON, you can also read it directly:
+
+```sh
+jq '.tasks | length' ~/.synchro/state.json
 ```
 
 ## Development
 
 ```sh
-go test ./...
+go test ./...                  # unit tests, no network needed
 go build -o synchro .
+go vet ./...
 ```
+
+Layout:
+
+```
+main.go
+internal/cli/      cobra commands, REPL, output
+internal/agents/   roles, FILE parsing, pipelines, workflow executor
+internal/llm/      provider clients (openai, ollama, gemini, anthropic)
+internal/store/    JSON persistence
+internal/repo/     generated-file safety and git
+internal/model/    domain types
+internal/ui/       terminal rendering
+```
+
+Providers are the easiest thing to extend: add a `Style` in `internal/llm` and
+an entry to `Registry`.
 
 ## License
 
