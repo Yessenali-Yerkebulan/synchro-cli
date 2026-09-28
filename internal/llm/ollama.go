@@ -124,7 +124,7 @@ type LocalModel struct {
 }
 
 // ListLocalModels queries the Ollama daemon for installed models. It is used by
-// `synchro models` and by the setup wizard to offer only what actually exists.
+// `synchro-cli models` and by the setup wizard to offer only what actually exists.
 func ListLocalModels(ctx context.Context, baseURL string, client *http.Client) ([]LocalModel, error) {
 	if client == nil {
 		client = &http.Client{Timeout: 10 * time.Second}

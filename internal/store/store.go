@@ -54,7 +54,7 @@ type Config struct {
 	ActiveAgentID     string `json:"active_agent_id,omitempty"`
 	ActiveProjectID   string `json:"active_project_id,omitempty"`
 
-	// PipelineMode is the chain `synchro pipeline` uses when none is given.
+	// PipelineMode is the chain `synchro-cli pipeline` uses when none is given.
 	PipelineMode string `json:"pipeline_mode,omitempty"`
 }
 
@@ -154,7 +154,7 @@ func (s *Store) reconcileInterrupted() error {
 		}
 		t.Status = model.StatusFailed
 		if t.ErrorMessage == "" {
-			t.ErrorMessage = "interrupted: the process running this task stopped before it finished. Run it again with: synchro task run " + t.ID
+			t.ErrorMessage = "interrupted: the process running this task stopped before it finished. Run it again with: synchro-cli task run " + t.ID
 		}
 		t.UpdatedAt = time.Now().UTC()
 		stale = append(stale, i)

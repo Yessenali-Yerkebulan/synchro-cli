@@ -37,13 +37,13 @@ type Provider struct {
 	Title string
 	// Style selects the wire protocol.
 	Style Style
-	// BaseURL is overridable via `synchro config set ollama_url ...` or the
+	// BaseURL is overridable via `synchro-cli config set ollama_url ...` or the
 	// SYNCHRO_<PROVIDER>_URL environment variable.
 	BaseURL string
 	// KeyRequired is false only for self-hosted providers.
 	KeyRequired bool
 	// KeyEnv is the environment variable Synchro also checks, so a user can
-	// export a key instead of running `synchro keys set`.
+	// export a key instead of running `synchro-cli keys set`.
 	KeyEnv string
 	// SignupURL is where a free key comes from.
 	SignupURL string
@@ -284,9 +284,9 @@ func (e *KeyRequiredError) Error() string {
 	var b strings.Builder
 	fmt.Fprintf(&b, "%s needs an API key. Get a free one at %s, then run:", e.Provider.Title, e.Provider.SignupURL)
 	if e.Provider.KeyEnv != "" {
-		fmt.Fprintf(&b, "\n\n  set %s=<your-key>    (environment variable)\n  or: synchro keys set %s", e.Provider.KeyEnv, e.Provider.Name)
+		fmt.Fprintf(&b, "\n\n  set %s=<your-key>    (environment variable)\n  or: synchro-cli keys set %s", e.Provider.KeyEnv, e.Provider.Name)
 	} else {
-		fmt.Fprintf(&b, "\n\n  synchro keys set %s", e.Provider.Name)
+		fmt.Fprintf(&b, "\n\n  synchro-cli keys set %s", e.Provider.Name)
 	}
 	return b.String()
 }

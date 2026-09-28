@@ -259,7 +259,7 @@ func joinInputs(existing, add string) string {
 }
 
 // BuildLinearGraph is the common case: chain every agent in order. It is what
-// `synchro wf new <name> --all` uses, and it produces a graph that is correct by
+// `synchro-cli wf new <name> --all` uses, and it produces a graph that is correct by
 // construction rather than something the user has to wire up.
 func BuildLinearGraph(agents []model.Agent) model.Graph {
 	g := model.Graph{}

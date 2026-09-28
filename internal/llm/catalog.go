@@ -18,7 +18,7 @@ type ModelInfo struct {
 // CuratedModels returns a hand-picked snapshot of a provider's models.
 //
 // These lists are a starting point, not a guarantee: vendors add, rename and
-// retire models constantly. `synchro models --refresh` queries each provider's
+// retire models constantly. `synchro-cli models --refresh` queries each provider's
 // live catalogue and is the authoritative source; this exists so a brand-new
 // install with a key can immediately pick a model without a network round-trip.
 func CuratedModels(provider string) []ModelInfo {
@@ -102,7 +102,7 @@ func LookupModel(provider, model string) (ModelInfo, bool) {
 //
 // Unrecognised models on a free-tier provider are assumed free rather than
 // expensive: the conservative choice for a tool whose whole promise is that it
-// will not quietly spend money, and `synchro models` makes the assumption
+// will not quietly spend money, and `synchro-cli models` makes the assumption
 // visible instead of hiding it.
 func IsFreeModel(provider, model string) bool {
 	if strings.ToLower(provider) == "ollama" {

@@ -131,7 +131,7 @@ func callGemini(ctx context.Context, p Provider, req Request) (*Result, error) {
 }
 
 // ListCloudModels returns the model ids a provider currently exposes.
-// Used by `synchro models --refresh` so the tool never goes stale as vendors
+// Used by `synchro-cli models --refresh` so the tool never goes stale as vendors
 // rename or retire models.
 func ListCloudModels(ctx context.Context, p Provider, apiKey string, client *http.Client) ([]string, error) {
 	if client == nil {
