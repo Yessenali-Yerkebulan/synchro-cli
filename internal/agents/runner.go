@@ -147,6 +147,7 @@ func (e *Engine) RunTask(ctx context.Context, task *model.Task, agent *model.Age
 		MaxTokens:   cfg.MaxTokens,
 		Stream:      cfg.Stream,
 		OnDelta:     e.OnDelta,
+		BaseURL:     e.baseURL(provider),
 		HTTPClient:  e.HTTP,
 		Timeout:     time.Duration(cfg.RequestTimeout) * time.Second,
 	})

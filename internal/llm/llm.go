@@ -194,6 +194,10 @@ type Request struct {
 	OnDelta func(string)
 	// Timeout bounds the whole call including streaming.
 	Timeout time.Duration
+	// BaseURL overrides the provider's built-in endpoint. It is what lets a
+	// self-hosted server, a proxy or a different-region endpoint be used
+	// without a code change; empty means "use the registry default".
+	BaseURL string
 	// HTTPClient is injectable for tests.
 	HTTPClient *http.Client
 }
@@ -237,6 +241,11 @@ func Call(ctx context.Context, req Request) (*Result, error) {
 	p, ok := Lookup(req.Provider)
 	if !ok {
 		return nil, fmt.Errorf("unknown provider %q (known: %s)", req.Provider, strings.Join(ProviderNames(), ", "))
+	}
+	// A caller-supplied endpoint wins over the registry default, so a
+	// self-hosted server or a proxy can be used without editing the registry.
+	if v := strings.TrimSpace(req.BaseURL); v != "" {
+		p.BaseURL = v
 	}
 	if p.KeyRequired && strings.TrimSpace(req.APIKey) == "" {
 		return nil, &KeyRequiredError{Provider: p}
