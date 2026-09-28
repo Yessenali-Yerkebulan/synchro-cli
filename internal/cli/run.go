@@ -6,9 +6,9 @@ import (
 	"strings"
 
 	"github.com/spf13/cobra"
-	"github.com/synchro/synchro/internal/agents"
-	"github.com/synchro/synchro/internal/model"
-	"github.com/synchro/synchro/internal/ui"
+	"github.com/synchro/synchro-cli/internal/agents"
+	"github.com/synchro/synchro-cli/internal/model"
+	"github.com/synchro/synchro-cli/internal/ui"
 )
 
 func newRunCmd(st *rootState) *cobra.Command {
@@ -26,10 +26,10 @@ func newRunCmd(st *rootState) *cobra.Command {
 This is the main way to use synchro. It creates a task, runs it with the
 active agent, prints the answer as it streams in, and records the result.
 
-  synchro run "write a CLI that renames files by git history"
+  synchro-cli run "write a CLI that renames files by git history"
 
 The active agent comes from the active team; pick one with
-  synchro agent use <name>, or override it for a single run with --agent.`),
+  synchro-cli agent use <name>, or override it for a single run with --agent.`),
 		Args: cobra.MinimumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			a, err := st.app()
@@ -141,11 +141,11 @@ you want to check which agents a mode will pick.`),
 				return listPipelineModes(a)
 			}
 			if len(args) == 0 {
-				return fmt.Errorf("describe what you want done, e.g. synchro pipeline \"a habit tracker with a web UI\"")
+				return fmt.Errorf("describe what you want done, e.g. synchro-cli pipeline \"a habit tracker with a web UI\"")
 			}
 			pm, ok := agents.PipelineModeByID(mode)
 			if !ok {
-				return fmt.Errorf("unknown mode %q. Run 'synchro pipeline --list' to see the options.", mode)
+				return fmt.Errorf("unknown mode %q. Run 'synchro-cli pipeline --list' to see the options.", mode)
 			}
 			team, err := a.RequireTeam()
 			if err != nil {
@@ -183,7 +183,7 @@ func listPipelineModes(a *App) error {
 	}
 	a.P.Table([]string{"MODE", "TITLE", "WHAT IT DOES", "CHAIN"}, rows)
 	a.P.Blank()
-	a.P.Hint("run one with: synchro pipeline --mode <id> \"<what you want done>\"")
+	a.P.Hint("run one with: synchro-cli pipeline --mode <id> \"<what you want done>\"")
 	return nil
 }
 
@@ -282,7 +282,7 @@ func (a *App) runPipeline(p *model.Project, pm agents.PipelineMode, stages []age
 	a.P.Blank()
 
 	if failCount > 0 {
-		a.P.Hint("partial results are saved; re-run the failed stage with: synchro task run <id>")
+		a.P.Hint("partial results are saved; re-run the failed stage with: synchro-cli task run <id>")
 		return fmt.Errorf("pipeline failed after %d of %d stages", okCount+failCount, len(stages))
 	}
 	if last := lastCompleted(results); last != nil && last.Result != nil && last.Result.Output != "" {

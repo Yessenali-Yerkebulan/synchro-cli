@@ -15,12 +15,12 @@ import (
 	"sync/atomic"
 
 	"github.com/peterh/liner"
-	"github.com/synchro/synchro/internal/agents"
-	"github.com/synchro/synchro/internal/llm"
-	"github.com/synchro/synchro/internal/model"
-	"github.com/synchro/synchro/internal/repo"
-	"github.com/synchro/synchro/internal/store"
-	"github.com/synchro/synchro/internal/ui"
+	"github.com/synchro/synchro-cli/internal/agents"
+	"github.com/synchro/synchro-cli/internal/llm"
+	"github.com/synchro/synchro-cli/internal/model"
+	"github.com/synchro/synchro-cli/internal/repo"
+	"github.com/synchro/synchro-cli/internal/store"
+	"github.com/synchro/synchro-cli/internal/ui"
 )
 
 // runREPL is the interactive shell: the default when synchro is run with no
@@ -53,6 +53,10 @@ func runREPL(a *App) error {
 		}
 	}()
 
+	// The logo goes first: it is the thing you see when the shell opens, and
+	// the welcome text reads as a caption under it.
+	printBanner(a)
+
 	if len(a.Store.Workspaces()) == 0 {
 		printWelcome(a)
 		if a.P.IsTTY {
@@ -77,7 +81,6 @@ func runREPL(a *App) error {
 	}
 	defer hist.save()
 
-	printBanner(a)
 	printContextBar(a)
 
 	for {
@@ -562,7 +565,7 @@ func replWorkflow(a *App, rest string) error {
 		list := a.Store.Workflows(team.ID)
 		if len(list) == 0 {
 			a.P.Info("no workflows in %s yet.", team.Name)
-			a.P.Info("create one:  synchro wf new \"<name>\" --agents researcher,developer,qa")
+			a.P.Info("create one:  synchro-cli wf new \"<name>\" --agents researcher,developer,qa")
 			return nil
 		}
 		rows := make([][]string, 0, len(list))
@@ -624,7 +627,7 @@ func replTasks(a *App) error {
 	}
 	a.P.Table([]string{"#", "ID", "STATUS", "AGENT", "TITLE", ""}, rows)
 	a.P.Blank()
-	a.P.Hint("read one: synchro task show <id>   -   commit its files: /commit <id>")
+	a.P.Hint("read one: synchro-cli task show <id>   -   commit its files: /commit <id>")
 	return nil
 }
 
@@ -706,7 +709,7 @@ func replReport(a *App) error {
 	a.P.Blank()
 	a.P.Markdown(res.Output)
 	a.P.Blank()
-	a.P.Hint("saved to the project. Write it to a file with: synchro report %s --save", p.Name)
+	a.P.Hint("saved to the project. Write it to a file with: synchro-cli report %s --save", p.Name)
 	return nil
 }
 
@@ -780,7 +783,7 @@ func replHistory(a *App) error {
 	}
 	a.P.Table([]string{"ID", "WHEN", "STATUS", "AGENT", "TITLE"}, rows)
 	a.P.Blank()
-	a.P.Hint("re-run one: synchro task run <id>")
+	a.P.Hint("re-run one: synchro-cli task run <id>")
 	return nil
 }
 
@@ -842,15 +845,16 @@ func replProvider(a *App, rest string) error {
 
 func printBanner(a *App) {
 	p := a.P
-	p.Printf("\n  %s  %s\n", p.Bold(p.Magenta("* SYNCHRO")), p.Gray(fmt.Sprintf("v%s - free, local, open source", Version)))
-	p.Printf("  %s\n\n", p.Gray("No account, no subscription, no server. Your data lives in "+a.Store.Dir()))
+	p.Wordmark(fmt.Sprintf("v%s  ·  free, local, open source", Version))
+	p.Printf("  %s\n", p.Gray("No account, no subscription, no server. Your data lives in "+a.Store.Dir()))
+	p.Println()
 }
 
 func printWelcome(a *App) {
 	p := a.P
-	p.Printf("\n  %s\n", p.Bold(p.Magenta("Welcome to synchro.")))
-	p.Printf("\n  %s\n", p.Gray("An AI team in your terminal. Give it a goal and the agents do the work:"))
-	p.Printf("\n    %s  %s\n", p.Bold("research"), p.Gray("grounds the plan in real sources"))
+	p.Printf("\n  %s\n", p.Bold(p.Magenta("An AI team in your terminal.")))
+	p.Printf("\n  %s\n\n", p.Gray("Give it a goal and the agents do the work:"))
+	p.Printf("    %s  %s\n", p.Bold("research"), p.Gray("grounds the plan in real sources"))
 	p.Printf("    %s  %s\n", p.Bold("spec    "), p.Gray("turns a rough idea into something buildable"))
 	p.Printf("    %s  %s\n", p.Bold("build   "), p.Gray("writes real files, committed to git"))
 	p.Printf("    %s  %s\n\n", p.Bold("review  "), p.Gray("finds the bugs before you do"))
@@ -896,7 +900,7 @@ func printContextBar(a *App) {
 	p := a.P
 	s := a.Resolve()
 	if s.Workspace == nil {
-		p.Hint("no workspace yet - run: synchro init")
+		p.Hint("no workspace yet - run: synchro-cli init")
 		return
 	}
 	sep := p.Gray(" > ")
@@ -972,7 +976,7 @@ func printHelp(a *App) {
 	p.Blank()
 	p.Printf("  %s %s\n", p.Bold("anything else"), p.Gray("is treated as a task for the active agent"))
 	p.Printf("  %s %s\n\n", p.Bold("Ctrl+C"), p.Gray("cancels a run; press it again at the prompt to quit"))
-	p.Hint("full docs: synchro <command> --help")
+	p.Hint("full docs: synchro-cli <command> --help")
 }
 
 // printIndexed renders a numbered list for the /switch commands, plus the one

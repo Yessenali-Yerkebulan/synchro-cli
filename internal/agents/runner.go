@@ -9,10 +9,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/synchro/synchro/internal/llm"
-	"github.com/synchro/synchro/internal/model"
-	"github.com/synchro/synchro/internal/repo"
-	"github.com/synchro/synchro/internal/store"
+	"github.com/synchro/synchro-cli/internal/llm"
+	"github.com/synchro/synchro-cli/internal/model"
+	"github.com/synchro/synchro-cli/internal/repo"
+	"github.com/synchro/synchro-cli/internal/store"
 )
 
 // Engine executes agents against providers. It owns no global state, so the

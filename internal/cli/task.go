@@ -6,7 +6,7 @@ import (
 	"strings"
 
 	"github.com/spf13/cobra"
-	"github.com/synchro/synchro/internal/model"
+	"github.com/synchro/synchro-cli/internal/model"
 )
 
 func newTaskCmd(st *rootState) *cobra.Command {
@@ -30,7 +30,7 @@ func newTaskCmd(st *rootState) *cobra.Command {
 			}
 			if len(tasks) == 0 {
 				a.P.Info("no tasks yet.")
-				a.P.Info("run one straight away with:  synchro run \"<what you want done>\"")
+				a.P.Info("run one straight away with:  synchro-cli run \"<what you want done>\"")
 				return nil
 			}
 			names := map[string]string{}
@@ -77,7 +77,7 @@ func newTaskCmd(st *rootState) *cobra.Command {
 			}
 			a.P.Table([]string{"#", "ID", "STATUS", "AGENT", "TITLE", ""}, rows)
 			a.P.Blank()
-			a.P.Hint("run one with: synchro task run <#|id>    ·    read one: synchro task show <#|id>")
+			a.P.Hint("run one with: synchro-cli task run <#|id>    ·    read one: synchro-cli task show <#|id>")
 			return nil
 		},
 	}
@@ -112,7 +112,7 @@ func newTaskCmd(st *rootState) *cobra.Command {
 				return err
 			}
 			a.P.Success("task %s created for %s", t.ID, ag.Name)
-			a.P.Hint("run it with: synchro task run %s", t.ID)
+			a.P.Hint("run it with: synchro-cli task run %s", t.ID)
 			return nil
 		},
 	}
@@ -123,7 +123,7 @@ func newTaskCmd(st *rootState) *cobra.Command {
 	runCmd := &cobra.Command{
 		Use:   "run [task]",
 		Short: "Run a task with its assigned agent",
-		Long:  "Accepts the row number from `synchro task`, a task id, or a task title.",
+		Long:  "Accepts the row number from `synchro-cli task`, a task id, or a task title.",
 		Args:  cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			a, err := st.app()
@@ -139,13 +139,13 @@ func newTaskCmd(st *rootState) *cobra.Command {
 			} else {
 				list := a.Store.Tasks("")
 				if len(list) == 0 {
-					return fmt.Errorf("no tasks yet. Create one: synchro task new \"<title>\"")
+					return fmt.Errorf("no tasks yet. Create one: synchro-cli task new \"<title>\"")
 				}
 				t = &list[len(list)-1]
 			}
 			ag, err := a.Store.Agent(t.AssignedAgentID, "")
 			if err != nil {
-				return fmt.Errorf("task %s has no agent assigned. Assign one with: synchro task new --agent <name>", t.ID)
+				return fmt.Errorf("task %s has no agent assigned. Assign one with: synchro-cli task new --agent <name>", t.ID)
 			}
 			_, err = a.ExecuteTask(t, ag, t.Title)
 			return err
@@ -155,7 +155,7 @@ func newTaskCmd(st *rootState) *cobra.Command {
 	showCmd := &cobra.Command{
 		Use:   "show <task>",
 		Short: "Show a task and its full result",
-		Long:  "Accepts the row number from `synchro task`, a task id, or a task title.",
+		Long:  "Accepts the row number from `synchro-cli task`, a task id, or a task title.",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			a, err := st.app()
@@ -187,9 +187,9 @@ func newTaskCmd(st *rootState) *cobra.Command {
 				case model.StatusFailed:
 					// The error above already explains the failure; repeating it
 					// as "not run yet" would contradict the status.
-					a.P.Hint("run it again with: synchro task run %s", t.ID)
+					a.P.Hint("run it again with: synchro-cli task run %s", t.ID)
 				case model.StatusRunning:
-					a.P.Info("this task is running. If no process is working on it, re-run it with: synchro task run %s", t.ID)
+					a.P.Info("this task is running. If no process is working on it, re-run it with: synchro-cli task run %s", t.ID)
 				default:
 					a.P.Info("this task has not been run yet")
 				}
@@ -224,7 +224,7 @@ func newTaskCmd(st *rootState) *cobra.Command {
 				}
 				if t.Result.Repo == nil && !t.Result.RepoUnchanged {
 					a.P.Blank()
-					a.P.Hint("commit them with: synchro commit %s", t.ID)
+					a.P.Hint("commit them with: synchro-cli commit %s", t.ID)
 				}
 			}
 			return nil
@@ -235,7 +235,7 @@ func newTaskCmd(st *rootState) *cobra.Command {
 		Use:     "rm <task>",
 		Aliases: []string{"remove", "delete", "del"},
 		Short:   "Delete a task",
-		Long:    "Accepts the row number from `synchro task`, a task id, or a task title.",
+		Long:    "Accepts the row number from `synchro-cli task`, a task id, or a task title.",
 		Args:    cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			a, err := st.app()
@@ -274,7 +274,7 @@ func (a *App) resolveTask(ref string) (*model.Task, error) {
 		if n >= 1 && n <= len(tasks) {
 			return &tasks[n-1], nil
 		}
-		return nil, fmt.Errorf("no task #%d — the list has %d. Run `synchro task` to see them", n, len(tasks))
+		return nil, fmt.Errorf("no task #%d — the list has %d. Run `synchro-cli task` to see them", n, len(tasks))
 	}
 	t, err := a.Store.Task(ref)
 	if err != nil {
@@ -320,7 +320,7 @@ func (a *App) requireProjectForTask() (*model.Project, error) {
 		return nil, err
 	}
 	if p == nil {
-		return nil, fmt.Errorf("this command needs a project so generated code has somewhere to go.\ncreate one with:  synchro project new <name>")
+		return nil, fmt.Errorf("this command needs a project so generated code has somewhere to go.\ncreate one with:  synchro-cli project new <name>")
 	}
 	return p, nil
 }

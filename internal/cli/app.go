@@ -9,11 +9,11 @@ import (
 	"strings"
 	"time"
 
-	"github.com/synchro/synchro/internal/agents"
-	"github.com/synchro/synchro/internal/llm"
-	"github.com/synchro/synchro/internal/model"
-	"github.com/synchro/synchro/internal/store"
-	"github.com/synchro/synchro/internal/ui"
+	"github.com/synchro/synchro-cli/internal/agents"
+	"github.com/synchro/synchro-cli/internal/llm"
+	"github.com/synchro/synchro-cli/internal/model"
+	"github.com/synchro/synchro-cli/internal/store"
+	"github.com/synchro/synchro-cli/internal/ui"
 	"golang.org/x/term"
 )
 
@@ -74,7 +74,7 @@ func (s Scope) Empty() bool {
 func (a *App) RequireWorkspace() (*model.Workspace, error) {
 	w, err := a.resolveWorkspace()
 	if err != nil {
-		return nil, fmt.Errorf("no workspace selected. Create one with:  synchro ws new <name>")
+		return nil, fmt.Errorf("no workspace selected. Create one with:  synchro-cli ws new <name>")
 	}
 	return w, nil
 }
@@ -86,7 +86,7 @@ func (a *App) RequireTeam() (*model.Team, error) {
 	}
 	t, err := a.resolveTeam()
 	if err != nil {
-		return nil, fmt.Errorf("no team selected in this workspace. Create one with:  synchro team new <name>  (or  synchro team from <template>)")
+		return nil, fmt.Errorf("no team selected in this workspace. Create one with:  synchro-cli team new <name>  (or  synchro-cli team from <template>)")
 	}
 	return t, nil
 }
@@ -98,7 +98,7 @@ func (a *App) RequireAgent() (*model.Agent, error) {
 	}
 	ag, err := a.resolveAgent()
 	if err != nil {
-		return nil, fmt.Errorf("no agent selected. Pick one with:  synchro agent use <name-or-number>")
+		return nil, fmt.Errorf("no agent selected. Pick one with:  synchro-cli agent use <name-or-number>")
 	}
 	return ag, nil
 }
@@ -278,8 +278,8 @@ type RunOutcome struct {
 // ExecuteTask runs a task with live output: a header, streamed markdown, and a
 // footer reporting tokens, duration, cost and any committed files.
 //
-// This is the single implementation behind `synchro run`, `synchro task run`,
-// `synchro pipeline` and the REPL, so all four look and behave the same.
+// This is the single implementation behind `synchro-cli run`, `synchro-cli task run`,
+// `synchro-cli pipeline` and the REPL, so all four look and behave the same.
 func (a *App) ExecuteTask(task *model.Task, agent *model.Agent, label string) (*model.TaskResult, error) {
 	return a.executeTask(task, agent, label, true)
 }
@@ -369,7 +369,7 @@ func (a *App) printRunFooter(res *model.TaskResult) {
 		case res.RepoUnchanged:
 			a.P.Printf("%s %s\n", a.P.Gray("·"), "files were identical to the last commit, nothing to record")
 		default:
-			a.P.Hint("commit them with:  synchro commit <task-id>")
+			a.P.Hint("commit them with:  synchro-cli commit <task-id>")
 		}
 	}
 }

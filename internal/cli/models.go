@@ -9,8 +9,8 @@ import (
 	"time"
 
 	"github.com/spf13/cobra"
-	"github.com/synchro/synchro/internal/llm"
-	"github.com/synchro/synchro/internal/store"
+	"github.com/synchro/synchro-cli/internal/llm"
+	"github.com/synchro/synchro-cli/internal/store"
 )
 
 func newModelsCmd(st *rootState) *cobra.Command {
@@ -24,10 +24,10 @@ func newModelsCmd(st *rootState) *cobra.Command {
 		Long: strings.TrimSpace(`
 Lists models per provider, marking which ones cost nothing.
 
-  synchro models              every provider, curated lists
-  synchro models ollama       just one provider
-  synchro models --refresh    ask each provider for its live catalogue
-  synchro models --all        include paid models
+  synchro-cli models              every provider, curated lists
+  synchro-cli models ollama       just one provider
+  synchro-cli models --refresh    ask each provider for its live catalogue
+  synchro-cli models --all        include paid models
 
 Free options, in order of how little setup they need:
   ollama      runs on this machine, unlimited, works offline
@@ -59,7 +59,7 @@ Free options, in order of how little setup they need:
 	return cmd
 }
 
-// printModelTable backs both `synchro models` and the shell's /models.
+// printModelTable backs both `synchro-cli models` and the shell's /models.
 func printModelTable(a *App, arg string) error {
 	arg = strings.TrimSpace(arg)
 	live := false
@@ -96,7 +96,7 @@ func printModelTable(a *App, arg string) error {
 		}
 	}
 	if len(providers) == 0 {
-		a.P.Info("no free providers configured. Try: synchro models --all")
+		a.P.Info("no free providers configured. Try: synchro-cli models --all")
 		return nil
 	}
 	for i, p := range providers {
@@ -161,7 +161,7 @@ func printProviderModels(a *App, p llm.Provider, refresh bool) {
 	default:
 		if p.KeyRequired && key == "" {
 			a.P.Printf("  %s\n", a.P.Yellow("no API key set"))
-			a.P.Printf("  %s\n", a.P.Gray(fmt.Sprintf("get one free at %s, then: synchro keys set %s", p.SignupURL, p.Name)))
+			a.P.Printf("  %s\n", a.P.Gray(fmt.Sprintf("get one free at %s, then: synchro-cli keys set %s", p.SignupURL, p.Name)))
 		}
 		var live []string
 		if refresh && (key != "" || !p.KeyRequired) {
@@ -250,8 +250,8 @@ No key is ever required for Ollama.`),
 		Long: strings.TrimSpace(`
 Pass the key as an argument, or omit it to be prompted without echo:
 
-  synchro keys set gemini
-  synchro keys set openrouter sk-or-v1-...`),
+  synchro-cli keys set gemini
+  synchro-cli keys set openrouter sk-or-v1-...`),
 		Args: cobra.RangeArgs(1, 2),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			a, err := st.app()
@@ -288,7 +288,7 @@ Pass the key as an argument, or omit it to be prompted without echo:
 			free := llm.CuratedModels(p.Name)
 			for _, m := range free {
 				if m.Free {
-					a.P.Hint("try it:  synchro agent edit <name> --provider %s --model %s", p.Name, m.ID)
+					a.P.Hint("try it:  synchro-cli agent edit <name> --provider %s --model %s", p.Name, m.ID)
 					return nil
 				}
 			}
@@ -340,7 +340,7 @@ func listKeys(a *App) error {
 	}
 	a.P.Table([]string{"PROVIDER", "WHAT", "STATUS", "ENV VAR"}, rows)
 	a.P.Blank()
-	a.P.Hint("store one with: synchro keys set <provider>")
+	a.P.Hint("store one with: synchro-cli keys set <provider>")
 	a.P.Hint("free keys: %s", strings.Join(freeSignupURLs(), "  "))
 	return nil
 }
@@ -376,7 +376,7 @@ func promptSecret(prompt string) (string, error) {
 	return string(b), nil
 }
 
-// showConfig prints every setting, shared by `synchro config` and /config.
+// showConfig prints every setting, shared by `synchro-cli config` and /config.
 func showConfig(a *App) error {
 	cfg := a.Store.Config()
 	rows := [][]string{
@@ -392,12 +392,12 @@ func showConfig(a *App) error {
 		{"request_timeout", fmt.Sprintf("%ds", cfg.RequestTimeout), "per-call timeout"},
 	}
 	if cfg.PipelineMode != "" {
-		rows = append(rows, []string{"pipeline_mode", cfg.PipelineMode, "chain used by /pipeline and synchro pipeline"})
+		rows = append(rows, []string{"pipeline_mode", cfg.PipelineMode, "chain used by /pipeline and synchro-cli pipeline"})
 	}
 	a.P.Table([]string{"SETTING", "VALUE", "WHAT IT DOES"}, rows)
 	a.P.Blank()
 	a.P.KeyValue("state dir", a.Store.Dir())
-	a.P.Hint("change one with: synchro config set <key> <value>")
+	a.P.Hint("change one with: synchro-cli config set <key> <value>")
 	return nil
 }
 

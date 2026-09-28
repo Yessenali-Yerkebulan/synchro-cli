@@ -5,8 +5,8 @@ import (
 	"strings"
 
 	"github.com/spf13/cobra"
-	"github.com/synchro/synchro/internal/agents"
-	"github.com/synchro/synchro/internal/model"
+	"github.com/synchro/synchro-cli/internal/agents"
+	"github.com/synchro/synchro-cli/internal/model"
 )
 
 func newWorkflowCmd(st *rootState) *cobra.Command {
@@ -19,8 +19,8 @@ A workflow is a graph: each node is an agent, and each edge says which agent
 runs next. Nodes wait for all of their predecessors and receive their combined
 output, so a graph can genuinely branch and merge.
 
-  synchro wf new "ship a feature" --agents researcher,developer,qa
-  synchro wf run "ship a feature" --input "add dark mode"
+  synchro-cli wf new "ship a feature" --agents researcher,developer,qa
+  synchro-cli wf run "ship a feature" --input "add dark mode"
 
 Workflows are the difference between a chat and a process: the output of one
 agent is the input of the next, with no copy-paste in between.`),
@@ -36,7 +36,7 @@ agent is the input of the next, with no copy-paste in between.`),
 			list := a.Store.Workflows(team.ID)
 			if len(list) == 0 {
 				a.P.Info("no workflows in %s yet.", team.Name)
-				a.P.Info("create one with:  synchro wf new \"<name>\" --agents researcher,developer,qa")
+				a.P.Info("create one with:  synchro-cli wf new \"<name>\" --agents researcher,developer,qa")
 				return nil
 			}
 			rows := make([][]string, 0, len(list))
@@ -49,7 +49,7 @@ agent is the input of the next, with no copy-paste in between.`),
 			}
 			a.P.Table([]string{"NAME", "ID", "GRAPH", "HISTORY"}, rows)
 			a.P.Blank()
-			a.P.Hint("run one with: synchro wf run <name> --input \"<what to work on>\"")
+			a.P.Hint("run one with: synchro-cli wf run <name> --input \"<what to work on>\"")
 			return nil
 		},
 	}
@@ -67,7 +67,7 @@ agent is the input of the next, with no copy-paste in between.`),
 		Long: strings.TrimSpace(`
 Agents are chained in the order given, so this is a linear graph:
 
-  synchro wf new "research then write" --agents researcher,developer
+  synchro-cli wf new "research then write" --agents researcher,developer
 
 Names are resolved to agents in the active team, by name or by number.`),
 		Args: cobra.ExactArgs(1),
@@ -154,7 +154,7 @@ Names are resolved to agents in the active team, by name or by number.`),
 			}
 			input, _ := cmd.Flags().GetString("input")
 			if strings.TrimSpace(input) == "" {
-				return fmt.Errorf("a workflow needs something to work on:  synchro wf run %s --input \"<what to work on>\"", wf.Name)
+				return fmt.Errorf("a workflow needs something to work on:  synchro-cli wf run %s --input \"<what to work on>\"", wf.Name)
 			}
 			return a.runWorkflow(wf, input)
 		},

@@ -3,7 +3,7 @@ package agents
 import (
 	"testing"
 
-	"github.com/synchro/synchro/internal/model"
+	"github.com/synchro/synchro-cli/internal/model"
 )
 
 func TestPipelineModeByID(t *testing.T) {

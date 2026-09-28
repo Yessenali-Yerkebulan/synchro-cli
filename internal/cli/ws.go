@@ -5,7 +5,7 @@ import (
 	"strings"
 
 	"github.com/spf13/cobra"
-	"github.com/synchro/synchro/internal/model"
+	"github.com/synchro/synchro-cli/internal/model"
 )
 
 func newWSCmd(st *rootState) *cobra.Command {
@@ -48,7 +48,7 @@ Unlike the web app, there is no limit on how many you can create.`),
 				return err
 			}
 			a.P.Success("workspace %s created (%s)", a.P.Bold(w.Name), w.ID)
-			a.P.Hint("next: synchro team from mvp")
+			a.P.Hint("next: synchro-cli team from mvp")
 			return nil
 		},
 	}
@@ -161,7 +161,7 @@ func listWorkspaces(st *rootState) error {
 	}
 	all := a.Store.Workspaces()
 	if len(all) == 0 {
-		a.P.Info("no workspaces yet. Create one with:  synchro ws new <name>")
+		a.P.Info("no workspaces yet. Create one with:  synchro-cli ws new <name>")
 		return nil
 	}
 	active := ""
@@ -192,7 +192,7 @@ func listWorkspaces(st *rootState) error {
 	}
 	a.P.Table([]string{"", "NAME", "ID", "CONTENTS"}, rows)
 	a.P.Blank()
-	a.P.Hint("* = active. Switch with: synchro ws use <name>")
+	a.P.Hint("* = active. Switch with: synchro-cli ws use <name>")
 	return nil
 }
 

@@ -14,7 +14,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/synchro/synchro/internal/model"
+	"github.com/synchro/synchro-cli/internal/model"
 )
 
 // Info describes a commit that was created.

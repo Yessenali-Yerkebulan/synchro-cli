@@ -7,7 +7,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/synchro/synchro/internal/model"
+	"github.com/synchro/synchro-cli/internal/model"
 )
 
 // NodePhase values passed to OnNode.

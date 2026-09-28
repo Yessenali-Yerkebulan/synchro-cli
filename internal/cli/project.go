@@ -6,8 +6,8 @@ import (
 	"strings"
 
 	"github.com/spf13/cobra"
-	"github.com/synchro/synchro/internal/model"
-	"github.com/synchro/synchro/internal/repo"
+	"github.com/synchro/synchro-cli/internal/model"
+	"github.com/synchro/synchro-cli/internal/repo"
 )
 
 func newProjectCmd(st *rootState) *cobra.Command {
@@ -30,7 +30,7 @@ agents is committed into a real git repository at ~/.synchro/repos/<project>.`),
 			projects := a.Store.Projects(ws.ID)
 			if len(projects) == 0 {
 				a.P.Info("no projects in %s yet.", ws.Name)
-				a.P.Info("create one with:  synchro project new <name>")
+				a.P.Info("create one with:  synchro-cli project new <name>")
 				return nil
 			}
 			active := ""
@@ -51,7 +51,7 @@ agents is committed into a real git repository at ~/.synchro/repos/<project>.`),
 			}
 			a.P.Table([]string{"", "NAME", "ID", "STATUS", "TASKS", "CODE"}, rows)
 			a.P.Blank()
-			a.P.Hint("* = active. Switch with: synchro project use <name>")
+			a.P.Hint("* = active. Switch with: synchro-cli project use <name>")
 			return nil
 		},
 	}
@@ -148,7 +148,7 @@ agents is committed into a real git repository at ~/.synchro/repos/<project>.`),
 			} else {
 				p, err = a.resolveProject()
 				if err != nil || p == nil {
-					return fmt.Errorf("no project selected. Create one with: synchro project new <name>")
+					return fmt.Errorf("no project selected. Create one with: synchro-cli project new <name>")
 				}
 			}
 			a.P.Title(p.Name)

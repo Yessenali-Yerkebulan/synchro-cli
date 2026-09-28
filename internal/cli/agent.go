@@ -5,9 +5,9 @@ import (
 	"strings"
 
 	"github.com/spf13/cobra"
-	"github.com/synchro/synchro/internal/agents"
-	"github.com/synchro/synchro/internal/llm"
-	"github.com/synchro/synchro/internal/model"
+	"github.com/synchro/synchro-cli/internal/agents"
+	"github.com/synchro/synchro-cli/internal/llm"
+	"github.com/synchro/synchro-cli/internal/model"
 )
 
 func newAgentCmd(st *rootState) *cobra.Command {
@@ -26,7 +26,7 @@ func newAgentCmd(st *rootState) *cobra.Command {
 			list := a.Store.Agents(team.ID)
 			if len(list) == 0 {
 				a.P.Info("team %q has no agents yet.", team.Name)
-				a.P.Info("add one:  synchro agent new \"Developer\" --role developer")
+				a.P.Info("add one:  synchro-cli agent new \"Developer\" --role developer")
 				return nil
 			}
 			active := ""
@@ -46,7 +46,7 @@ func newAgentCmd(st *rootState) *cobra.Command {
 			}
 			printAgentTable(a, list, active)
 			a.P.Blank()
-			a.P.Hint("* = active. Switch with: synchro agent use <name|number>")
+			a.P.Hint("* = active. Switch with: synchro-cli agent use <name|number>")
 			return nil
 		},
 	}

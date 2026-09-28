@@ -6,7 +6,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/synchro/synchro/internal/model"
+	"github.com/synchro/synchro-cli/internal/model"
 )
 
 func write(t *testing.T, files []model.CodeFile, msg string) (*Info, error) {

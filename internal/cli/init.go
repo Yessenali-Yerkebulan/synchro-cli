@@ -10,10 +10,10 @@ import (
 	"time"
 
 	"github.com/spf13/cobra"
-	"github.com/synchro/synchro/internal/agents"
-	"github.com/synchro/synchro/internal/llm"
-	"github.com/synchro/synchro/internal/model"
-	"github.com/synchro/synchro/internal/store"
+	"github.com/synchro/synchro-cli/internal/agents"
+	"github.com/synchro/synchro-cli/internal/llm"
+	"github.com/synchro/synchro-cli/internal/model"
+	"github.com/synchro/synchro-cli/internal/store"
 )
 
 func newInitCmd(st *rootState) *cobra.Command {
@@ -42,7 +42,7 @@ Run it again at any time to add another provider.`),
 			}
 			interactive := !noWizard && !st.opt.Yes && a.P.IsTTY
 
-			a.P.Title("synchro setup")
+			a.P.Wordmark(fmt.Sprintf("v%s  ·  setup", Version))
 			a.P.Printf("  %s\n\n", a.P.Gray("No account, no subscription, no server. Everything stays in "+a.Store.Dir()))
 
 			if err := setupProvider(a, interactive); err != nil {
@@ -76,11 +76,11 @@ Run it again at any time to add another provider.`),
 
 			a.P.Blank()
 			a.P.Title("You're set up")
-			a.P.Printf("  %s\n", a.P.Bold("synchro run \"<what you want built>\""))
-			a.P.Printf("  %s\n", a.P.Bold("synchro"))
+			a.P.Printf("  %s\n", a.P.Bold("synchro-cli run \"<what you want built>\""))
+			a.P.Printf("  %s\n", a.P.Bold("synchro-cli"))
 			a.P.Blank()
 			a.P.Hint("  the second one opens the interactive shell")
-			a.P.Hint("  check your setup any time with: synchro doctor")
+			a.P.Hint("  check your setup any time with: synchro-cli doctor")
 			return nil
 		},
 	}
@@ -164,7 +164,7 @@ func setupCloudKey(a *App, interactive bool) error {
 	a.P.Heading("Free cloud key (optional)")
 
 	if !interactive {
-		a.P.Info("skipping - re-run 'synchro init' or use 'synchro keys set <provider>' any time")
+		a.P.Info("skipping - re-run 'synchro-cli init' or use 'synchro-cli keys set <provider>' any time")
 		return nil
 	}
 
@@ -222,7 +222,7 @@ then tells you what to do about anything that is not ready.`),
 	}
 }
 
-// runDoctor is shared by `synchro doctor` and the shell's /doctor.
+// runDoctor is shared by `synchro-cli doctor` and the shell's /doctor.
 func runDoctor(a *App) error {
 	problems := 0
 	warn := func(format string, args ...any) {
@@ -236,7 +236,7 @@ func runDoctor(a *App) error {
 		a.P.Printf("  %s %s\n", a.P.Gray("-"), fmt.Sprintf(format, args...))
 	}
 
-	a.P.Title("synchro doctor")
+	a.P.Title("synchro-cli doctor")
 	a.P.Blank()
 
 	// State directory.
@@ -288,7 +288,7 @@ func runDoctor(a *App) error {
 
 	// The verdict that matters: can this install actually answer a prompt?
 	if !ollamaReady && ready == 0 {
-		warn("no model is reachable - start Ollama (ollama pull qwen3) or set a free key (synchro keys set gemini)")
+		warn("no model is reachable - start Ollama (ollama pull qwen3) or set a free key (synchro-cli keys set gemini)")
 	}
 
 	// Default model sanity.
@@ -304,7 +304,7 @@ func runDoctor(a *App) error {
 	// Counts.
 	wss := len(a.Store.Workspaces())
 	if wss == 0 {
-		note("no workspaces yet - run: synchro init")
+		note("no workspaces yet - run: synchro-cli init")
 	} else {
 		ok("%d workspace(s), %d agent(s), %d project(s), %d task(s)",
 			wss, len(a.Store.Agents("")), len(a.Store.Projects("")), len(a.Store.Tasks("")))

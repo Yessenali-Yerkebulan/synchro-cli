@@ -6,12 +6,12 @@ import (
 	"strings"
 
 	"github.com/spf13/cobra"
-	"github.com/synchro/synchro/internal/ui"
+	"github.com/synchro/synchro-cli/internal/ui"
 )
 
 // Build metadata, overridable at link time:
 //
-//	go build -ldflags "-X github.com/synchro/synchro/internal/cli.Version=1.2.3"
+//	go build -ldflags "-X github.com/synchro/synchro-cli/internal/cli.Version=1.2.3"
 var (
 	Version = "0.1.0"
 	Commit  = "dev"
@@ -60,10 +60,10 @@ func isUsageError(err error) bool {
 
 func newRootCmd(st *rootState) *cobra.Command {
 	root := &cobra.Command{
-		Use:   "synchro",
+		Use:   "synchro-cli",
 		Short: "An AI team in your terminal",
 		Long: strings.TrimSpace(`
-synchro runs a team of AI agents from your shell: give it a goal, and a
+synchro-cli runs a team of AI agents from your shell: give it a goal, and a
 product manager plans it, a researcher grounds it in real sources, a
 developer writes the code, and a reviewer finds the problems.
 
@@ -148,7 +148,7 @@ func newVersionCmd(st *rootState) *cobra.Command {
 				a.P.Printf("{\"version\":%q,\"commit\":%q}\n", Version, Commit)
 				return nil
 			}
-			a.P.Printf("synchro %s (%s)\n", Version, Commit)
+			a.P.Printf("synchro-cli %s (%s)\n", Version, Commit)
 			return nil
 		},
 	}

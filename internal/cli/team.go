@@ -5,8 +5,8 @@ import (
 	"strings"
 
 	"github.com/spf13/cobra"
-	"github.com/synchro/synchro/internal/agents"
-	"github.com/synchro/synchro/internal/model"
+	"github.com/synchro/synchro-cli/internal/agents"
+	"github.com/synchro/synchro-cli/internal/model"
 )
 
 func newTeamCmd(st *rootState) *cobra.Command {
@@ -26,7 +26,7 @@ func newTeamCmd(st *rootState) *cobra.Command {
 			teams := a.Store.Teams(ws.ID)
 			if len(teams) == 0 {
 				a.P.Info("no teams in %s yet.", ws.Name)
-				a.P.Info("Start from a template:  synchro team from mvp")
+				a.P.Info("Start from a template:  synchro-cli team from mvp")
 				return nil
 			}
 			active := ""
@@ -52,7 +52,7 @@ func newTeamCmd(st *rootState) *cobra.Command {
 			}
 			a.P.Table([]string{"", "NAME", "ID", "AGENTS", "ROLES"}, rows)
 			a.P.Blank()
-			a.P.Hint("* = active. Switch with: synchro team use <name>")
+			a.P.Hint("* = active. Switch with: synchro-cli team use <name>")
 			return nil
 		},
 	}
@@ -80,7 +80,7 @@ func newTeamCmd(st *rootState) *cobra.Command {
 				return err
 			}
 			a.P.Success("team %s created (%s)", a.P.Bold(t.Name), t.ID)
-			a.P.Hint("next: synchro agent new \"<name>\" --role developer")
+			a.P.Hint("next: synchro-cli agent new \"<name>\" --role developer")
 			return nil
 		},
 	}
@@ -139,7 +139,7 @@ Ollama by default: no key required.`),
 			}
 			a.P.Table([]string{"ID", "NAME", "WHAT IT DOES", "ROLES"}, rows)
 			a.P.Blank()
-			a.P.Hint("create one with: synchro team from <id>")
+			a.P.Hint("create one with: synchro-cli team from <id>")
 			return nil
 		},
 	}
@@ -307,7 +307,7 @@ func createTeamFromTemplate(a *App, ws *model.Workspace, tpl agents.Template, na
 	}
 	a.P.Table([]string{"#", "AGENT", "ROLE", "MODEL"}, rows)
 	a.P.Blank()
-	a.P.Hint("try it:  synchro run \"<what you want built>\"")
+	a.P.Hint("try it:  synchro-cli run \"<what you want built>\"")
 	return nil
 }
 

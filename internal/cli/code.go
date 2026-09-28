@@ -6,8 +6,8 @@ import (
 	"strings"
 
 	"github.com/spf13/cobra"
-	"github.com/synchro/synchro/internal/model"
-	"github.com/synchro/synchro/internal/repo"
+	"github.com/synchro/synchro-cli/internal/model"
+	"github.com/synchro/synchro-cli/internal/repo"
 )
 
 func newCommitCmd(st *rootState) *cobra.Command {
@@ -19,7 +19,7 @@ When a workspace has auto-commit turned off, a DEVELOPER agent's files stay on
 the task result until you approve them. This is the approval step: it writes
 them into ~/.synchro/repos/<project> and makes a commit.
 
-Turn auto-commit on for a workspace with:  synchro ws edit <name> --auto-commit`),
+Turn auto-commit on for a workspace with:  synchro-cli ws edit <name> --auto-commit`),
 		Args: cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			a, err := st.app()
@@ -70,7 +70,7 @@ func newFilesCmd(st *rootState) *cobra.Command {
 				a.P.Printf("  %s\n", f)
 			}
 			a.P.Blank()
-			a.P.Hint("%d file(s) · view one with: synchro files show <path>", len(files))
+			a.P.Hint("%d file(s) · view one with: synchro-cli files show <path>", len(files))
 			return nil
 		},
 	}
@@ -133,7 +133,7 @@ func (a *App) projectArg(args []string) (*model.Project, error) {
 		return nil, err
 	}
 	if p == nil {
-		return nil, fmt.Errorf("no project selected. Create one with: synchro project new <name>")
+		return nil, fmt.Errorf("no project selected. Create one with: synchro-cli project new <name>")
 	}
 	return p, nil
 }
@@ -206,7 +206,7 @@ was built. The prompt is explicit that it must not invent anything.`),
 			a.P.Blank()
 			a.P.Markdown(res.Output)
 			a.P.Blank()
-			a.P.Hint("saved to the project. Write it to a file with: synchro report %s --save", p.Name)
+			a.P.Hint("saved to the project. Write it to a file with: synchro-cli report %s --save", p.Name)
 			return nil
 		},
 	}
