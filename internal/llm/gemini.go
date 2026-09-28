@@ -92,6 +92,7 @@ func callGemini(ctx context.Context, p Provider, req Request) (*Result, error) {
 			return nil, fmt.Errorf("gemini: decode: %w", err)
 		}
 		handle(full)
+		res.Output = sb.String()
 		res.TokensEstimated = res.TokensUsed == 0
 		if res.TokensEstimated {
 			res.TokensUsed = estimateTokens(res.Output)
@@ -120,6 +121,7 @@ func callGemini(ctx context.Context, p Provider, req Request) (*Result, error) {
 	if err := sc.Err(); err != nil {
 		return nil, fmt.Errorf("gemini: stream: %w", err)
 	}
+	res.Output = sb.String()
 	res.TokensEstimated = res.TokensUsed == 0
 	if res.TokensEstimated {
 		res.TokensUsed = estimateTokens(res.Output)

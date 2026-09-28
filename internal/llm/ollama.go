@@ -67,6 +67,7 @@ func callOllama(ctx context.Context, p Provider, req Request) (*Result, error) {
 		}
 		emit(full.Message.Content)
 		res.TokensUsed = full.PromptTokens + full.EvalCount
+		res.Output = sb.String()
 		res.TokensEstimated = res.TokensUsed == 0
 		if res.TokensEstimated {
 			res.TokensUsed = estimateTokens(res.Output)
@@ -106,6 +107,7 @@ func callOllama(ctx context.Context, p Provider, req Request) (*Result, error) {
 	if err := sc.Err(); err != nil {
 		return nil, fmt.Errorf("ollama: stream: %w", err)
 	}
+	res.Output = sb.String()
 	res.TokensEstimated = res.TokensUsed == 0
 	if res.TokensEstimated {
 		res.TokensUsed = estimateTokens(res.Output)

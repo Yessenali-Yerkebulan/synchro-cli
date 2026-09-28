@@ -80,6 +80,7 @@ func callAnthropic(ctx context.Context, p Provider, req Request) (*Result, error
 		}
 		emit(out.String())
 		res.TokensUsed = full.Usage.InputTokens + full.Usage.OutputTokens
+		res.Output = sb.String()
 		res.TokensEstimated = res.TokensUsed == 0
 		if res.TokensEstimated {
 			res.TokensUsed = estimateTokens(res.Output)
@@ -129,6 +130,7 @@ func callAnthropic(ctx context.Context, p Provider, req Request) (*Result, error
 	if err := sc.Err(); err != nil {
 		return nil, fmt.Errorf("anthropic: stream: %w", err)
 	}
+	res.Output = sb.String()
 	if res.TokensUsed == 0 {
 		res.TokensEstimated = true
 		res.TokensUsed = estimateTokens(res.Output)

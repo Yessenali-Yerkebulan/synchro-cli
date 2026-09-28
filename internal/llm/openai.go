@@ -92,6 +92,7 @@ func callOpenAI(ctx context.Context, p Provider, req Request) (*Result, error) {
 		if full.Usage != nil {
 			res.TokensUsed = full.Usage.TotalTokens
 		}
+		res.Output = sb.String()
 		res.TokensEstimated = res.TokensUsed == 0
 		if res.TokensEstimated {
 			res.TokensUsed = estimateTokens(res.Output)
@@ -125,6 +126,7 @@ func callOpenAI(ctx context.Context, p Provider, req Request) (*Result, error) {
 	if err := sc.Err(); err != nil {
 		return nil, fmt.Errorf("%s: stream: %w", p.Name, err)
 	}
+	res.Output = sb.String()
 	res.TokensEstimated = res.TokensUsed == 0
 	if res.TokensEstimated {
 		res.TokensUsed = estimateTokens(res.Output)
