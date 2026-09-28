@@ -1,0 +1,14 @@
+# Build output
+/synchro
+/synchro.exe
+/dist/
+
+# Local state
+.synchro/
+*.exe
+
+# Editor noise
+.idea/
+.vscode/
+*.swp
+.DS_Store
