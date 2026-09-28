@@ -16,7 +16,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/synchro/synchro-cli/internal/model"
+	"github.com/synchro/synchro/internal/model"
 )
 
 // ErrNotFound is returned when a lookup by id or name fails.

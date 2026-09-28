@@ -6,12 +6,12 @@ import (
 	"strings"
 
 	"github.com/spf13/cobra"
-	"github.com/synchro/synchro-cli/internal/ui"
+	"github.com/synchro/synchro/internal/ui"
 )
 
 // Build metadata, overridable at link time:
 //
-//	go build -ldflags "-X github.com/synchro/synchro-cli/internal/cli.Version=1.2.3"
+//	go build -ldflags "-X github.com/synchro/synchro/internal/cli.Version=1.2.3"
 var (
 	Version = "0.1.0"
 	Commit  = "dev"

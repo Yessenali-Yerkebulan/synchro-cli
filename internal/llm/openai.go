@@ -41,8 +41,8 @@ func callOpenAI(ctx context.Context, p Provider, req Request) (*Result, error) {
 	// OpenRouter attributes traffic to the app that made it; harmless and
 	// makes usage visible to anyone reading their dashboard.
 	if p.Name == "openrouter" {
-		headers["HTTP-Referer"] = "https://github.com/synchro/synchro-cli"
-		headers["X-Title"] = "synchro-cli"
+		headers["HTTP-Referer"] = "https://github.com/synchro/synchro"
+		headers["X-Title"] = "synchro"
 	}
 
 	start := time.Now()

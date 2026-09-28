@@ -15,12 +15,12 @@ import (
 	"sync/atomic"
 
 	"github.com/peterh/liner"
-	"github.com/synchro/synchro-cli/internal/agents"
-	"github.com/synchro/synchro-cli/internal/llm"
-	"github.com/synchro/synchro-cli/internal/model"
-	"github.com/synchro/synchro-cli/internal/repo"
-	"github.com/synchro/synchro-cli/internal/store"
-	"github.com/synchro/synchro-cli/internal/ui"
+	"github.com/synchro/synchro/internal/agents"
+	"github.com/synchro/synchro/internal/llm"
+	"github.com/synchro/synchro/internal/model"
+	"github.com/synchro/synchro/internal/repo"
+	"github.com/synchro/synchro/internal/store"
+	"github.com/synchro/synchro/internal/ui"
 )
 
 // runREPL is the interactive shell: the default when synchro is run with no

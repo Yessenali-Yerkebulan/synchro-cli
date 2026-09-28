@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/synchro/synchro-cli/internal/llm"
-	"github.com/synchro/synchro-cli/internal/model"
+	"github.com/synchro/synchro/internal/llm"
+	"github.com/synchro/synchro/internal/model"
 )
 
 // StageResult is the outcome of one pipeline stage.

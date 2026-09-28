@@ -61,14 +61,21 @@ Requires **Go 1.27.1 or newer**. There are no other dependencies — no runtime,
 container, no service to keep alive.
 
 ```sh
-go install github.com/synchro/synchro-cli@latest
+go install github.com/synchro/synchro@latest
+```
+
+That puts the binary in `$(go env GOPATH)/bin`, so make sure that directory is on
+your `PATH`:
+
+```sh
+export PATH="$PATH:$(go env GOPATH)/bin"   # add to ~/.bashrc or ~/.zshrc to keep it
 ```
 
 Or from a clone:
 
 ```sh
-git clone https://github.com/synchro/synchro-cli
-cd synchro-cli
+git clone https://github.com/synchro/synchro
+cd synchro
 go build -o synchro .
 ```
 
@@ -77,6 +84,14 @@ Check it:
 ```sh
 synchro version
 synchro doctor
+```
+
+If you built inside the clone and ran `synchro` from that directory, prefix it
+with `./` — a shell will not run a command out of the current directory on its
+own:
+
+```sh
+./synchro version
 ```
 
 ## Getting a model

@@ -6,7 +6,7 @@ import (
 	"strings"
 
 	"github.com/spf13/cobra"
-	"github.com/synchro/synchro-cli/internal/model"
+	"github.com/synchro/synchro/internal/model"
 )
 
 func newTaskCmd(st *rootState) *cobra.Command {

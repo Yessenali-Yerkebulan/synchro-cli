@@ -5,8 +5,8 @@ import (
 	"strings"
 
 	"github.com/spf13/cobra"
-	"github.com/synchro/synchro-cli/internal/agents"
-	"github.com/synchro/synchro-cli/internal/model"
+	"github.com/synchro/synchro/internal/agents"
+	"github.com/synchro/synchro/internal/model"
 )
 
 func newTeamCmd(st *rootState) *cobra.Command {

@@ -106,7 +106,7 @@ func (d *duckduckgo) Search(ctx context.Context, query string, limit int) ([]Sea
 	if err != nil {
 		return nil, err
 	}
-	req.Header.Set("User-Agent", "Mozilla/5.0 (compatible; synchro-cli/1.0)")
+	req.Header.Set("User-Agent", "Mozilla/5.0 (compatible; synchro/1.0)")
 	req.Header.Set("Accept", "text/html")
 
 	resp, err := d.httpClient().Do(req)

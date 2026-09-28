@@ -9,8 +9,8 @@ import (
 	"time"
 
 	"github.com/spf13/cobra"
-	"github.com/synchro/synchro-cli/internal/llm"
-	"github.com/synchro/synchro-cli/internal/store"
+	"github.com/synchro/synchro/internal/llm"
+	"github.com/synchro/synchro/internal/store"
 )
 
 func newModelsCmd(st *rootState) *cobra.Command {

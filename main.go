@@ -7,7 +7,7 @@ package main
 import (
 	"os"
 
-	"github.com/synchro/synchro-cli/internal/cli"
+	"github.com/synchro/synchro/internal/cli"
 )
 
 func main() {

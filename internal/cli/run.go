@@ -6,9 +6,9 @@ import (
 	"strings"
 
 	"github.com/spf13/cobra"
-	"github.com/synchro/synchro-cli/internal/agents"
-	"github.com/synchro/synchro-cli/internal/model"
-	"github.com/synchro/synchro-cli/internal/ui"
+	"github.com/synchro/synchro/internal/agents"
+	"github.com/synchro/synchro/internal/model"
+	"github.com/synchro/synchro/internal/ui"
 )
 
 func newRunCmd(st *rootState) *cobra.Command {

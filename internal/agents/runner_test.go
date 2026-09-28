@@ -4,7 +4,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/synchro/synchro-cli/internal/store"
+	"github.com/synchro/synchro/internal/store"
 )
 
 func TestBaseURLFallsBackToRegistry(t *testing.T) {

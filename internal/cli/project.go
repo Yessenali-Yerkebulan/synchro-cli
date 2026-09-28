@@ -6,8 +6,8 @@ import (
 	"strings"
 
 	"github.com/spf13/cobra"
-	"github.com/synchro/synchro-cli/internal/model"
-	"github.com/synchro/synchro-cli/internal/repo"
+	"github.com/synchro/synchro/internal/model"
+	"github.com/synchro/synchro/internal/repo"
 )
 
 func newProjectCmd(st *rootState) *cobra.Command {

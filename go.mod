@@ -1,4 +1,4 @@
-module github.com/synchro/synchro-cli
+module github.com/synchro/synchro
 
 go 1.27.1
 
