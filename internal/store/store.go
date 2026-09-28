@@ -14,6 +14,7 @@ import (
 	"sort"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/synchro/synchro-cli/internal/model"
 )
@@ -137,7 +138,31 @@ func (s *Store) load() error {
 	if err := readJSON(filepath.Join(s.dir, "credentials.json"), &creds); err == nil {
 		s.creds = creds
 	}
-	return nil
+	return s.reconcileInterrupted()
+}
+
+// reconcileInterrupted fails tasks that were still RUNNING when their process
+// died. A kill, a crash or a closed terminal leaves the flag set, and without
+// this the task would look in flight forever: it would never be retried and
+// `task list` would lie about the state of the workspace.
+func (s *Store) reconcileInterrupted() error {
+	var stale []int
+	for i := range s.state.Tasks {
+		t := &s.state.Tasks[i]
+		if t.Status != model.StatusRunning {
+			continue
+		}
+		t.Status = model.StatusFailed
+		if t.ErrorMessage == "" {
+			t.ErrorMessage = "interrupted: the process running this task stopped before it finished. Run it again with: synchro task run " + t.ID
+		}
+		t.UpdatedAt = time.Now().UTC()
+		stale = append(stale, i)
+	}
+	if len(stale) == 0 {
+		return nil
+	}
+	return s.writeLocked("state.json", s.state)
 }
 
 // Dir is the store root.

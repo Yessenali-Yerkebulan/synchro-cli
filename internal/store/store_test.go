@@ -207,6 +207,55 @@ func TestAddSpentIgnoresUnknownProject(t *testing.T) {
 	}
 }
 
+// A task left RUNNING by a killed process must be failed on the next open,
+// otherwise it looks in flight forever and is never retried.
+func TestOpenFailsTasksInterruptedByADeadProcess(t *testing.T) {
+	dir := t.TempDir()
+	s, err := Open(dir)
+	if err != nil {
+		t.Fatalf("Open: %v", err)
+	}
+	for _, st := range []model.Status{model.StatusRunning, model.StatusCompleted, model.StatusPending} {
+		must(t, s.CreateTask(&model.Task{
+			ProjectID: "p1", AssignedAgentID: "a1",
+			Title:  string(st),
+			Status: st,
+		}))
+	}
+	must(t, s.Save())
+
+	reopened, err := Open(dir)
+	if err != nil {
+		t.Fatalf("reopen: %v", err)
+	}
+	for _, got := range reopened.Tasks("p1") {
+		switch got.Title {
+		case string(model.StatusRunning):
+			if got.Status != model.StatusFailed {
+				t.Errorf("interrupted task status = %q, want FAILED", got.Status)
+			}
+			if got.ErrorMessage == "" {
+				t.Error("interrupted task should explain what happened")
+			}
+		default:
+			if got.Status != model.Status(got.Title) {
+				t.Errorf("task %q status = %q, want it untouched", got.Title, got.Status)
+			}
+		}
+	}
+
+	// The fix must be durable, not just in memory for this process.
+	again, err := Open(dir)
+	if err != nil {
+		t.Fatalf("third open: %v", err)
+	}
+	for _, got := range again.Tasks("p1") {
+		if got.Title == string(model.StatusRunning) && got.Status != model.StatusFailed {
+			t.Errorf("interrupted task status = %q after reopen, want FAILED", got.Status)
+		}
+	}
+}
+
 func must(t *testing.T, err error) {
 	t.Helper()
 	if err != nil {
