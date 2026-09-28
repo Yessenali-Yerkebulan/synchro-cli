@@ -478,12 +478,36 @@ func replPipeline(a *App, rest string) error {
 	if rest == "--list" || rest == "list" || rest == "?" {
 		return listPipelineModes(a)
 	}
-	// A leading word that names a mode selects it; anything else is the goal.
+	// Accept the same --mode flag the CLI command takes, so muscle memory
+	// carries over between the shell and one-shot invocations.
 	mode := defaultPipelineMode(a.Store.Config())
-	if fields := strings.Fields(rest); len(fields) > 0 {
+	trimmed := strings.TrimSpace(rest)
+	// Both flag spellings are accepted, and the goal is whatever follows the
+	// mode. "--mode=idea" and "--mode idea" behave the same.
+	if trimmed == "--mode" {
+		return fmt.Errorf("/pipeline --mode needs a mode name, e.g. /pipeline --mode review <what to do>")
+	}
+	if strings.HasPrefix(trimmed, "--mode=") || strings.HasPrefix(trimmed, "--mode ") {
+		fields := strings.Fields(trimmed)
+		if len(fields) < 2 {
+			return fmt.Errorf("/pipeline --mode needs a mode name, e.g. /pipeline --mode review <what to do>")
+		}
+		if value, ok := strings.CutPrefix(fields[0], "--mode="); ok {
+			// The value shares the first token, so the goal starts at the
+			// second one.
+			mode = value
+			rest = strings.Join(fields[1:], " ")
+		} else {
+			mode = fields[1]
+			rest = strings.Join(fields[2:], " ")
+		}
+		rest = strings.TrimSpace(rest)
+	} else if fields := strings.Fields(trimmed); len(fields) > 0 {
+		// A leading bare word that names a mode selects it; anything else is
+		// the goal.
 		if pm, ok := agents.PipelineModeByID(fields[0]); ok {
 			mode = pm.ID
-			rest = strings.TrimSpace(strings.TrimPrefix(rest, fields[0]))
+			rest = strings.TrimSpace(trimmed[len(fields[0]):])
 		}
 	}
 	if rest == "" {
@@ -670,7 +694,7 @@ func replReport(a *App) error {
 	if err := a.Store.CreateTask(t); err != nil {
 		return err
 	}
-	res, err := a.ExecuteTask(t, reporter, t.Title)
+	res, err := a.ExecuteTaskQuiet(t, reporter, t.Title)
 	if err != nil {
 		return err
 	}
