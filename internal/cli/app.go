@@ -281,10 +281,27 @@ type RunOutcome struct {
 // This is the single implementation behind `synchro run`, `synchro task run`,
 // `synchro pipeline` and the REPL, so all four look and behave the same.
 func (a *App) ExecuteTask(task *model.Task, agent *model.Agent, label string) (*model.TaskResult, error) {
+	return a.executeTask(task, agent, label, true)
+}
+
+// ExecuteTaskQuiet runs a task without echoing its answer. It exists for
+// callers that render the result themselves, such as the delivery report:
+// streaming it and then printing the finished document would show the same
+// text twice.
+func (a *App) ExecuteTaskQuiet(task *model.Task, agent *model.Agent, label string) (*model.TaskResult, error) {
+	return a.executeTask(task, agent, label, false)
+}
+
+func (a *App) executeTask(task *model.Task, agent *model.Agent, label string, live bool) (*model.TaskResult, error) {
 	e := a.NewEngine()
 
-	stream := a.P.NewStream(false)
-	e.OnDelta = func(text string) { _, _ = stream.Write([]byte(text)) }
+	// live reports whether to echo the answer as it arrives. Even when it is
+	// off the spinner still shows that work is happening.
+	var stream *ui.Stream
+	if live {
+		stream = a.P.NewStream(false)
+		e.OnDelta = func(text string) { _, _ = stream.Write([]byte(text)) }
+	}
 
 	a.P.Printf("\n%s %s\n", a.P.Bold("▸"), a.P.Bold(label))
 	a.P.Printf("  %s\n", a.P.Gray(fmt.Sprintf("%s · %s/%s", agent.Name, agent.Provider, agent.Model)))
@@ -292,7 +309,9 @@ func (a *App) ExecuteTask(task *model.Task, agent *model.Agent, label string) (*
 	spin := a.P.StartSpinner("thinking…")
 	res, err := e.RunTask(a.Ctx, task, agent)
 	spin.Stop()
-	stream.Flush()
+	if stream != nil {
+		stream.Flush()
+	}
 
 	if err != nil {
 		task.Status = model.StatusFailed
@@ -308,7 +327,11 @@ func (a *App) ExecuteTask(task *model.Task, agent *model.Agent, label string) (*
 		_ = a.Store.AddSpent(task.ProjectID, llm.EstimateCostUSD(res.Provider, res.Model, res.TokensUsed))
 	}
 
-	a.printRunFooter(res)
+	if live {
+		a.printRunFooter(res)
+	} else {
+		a.P.Printf("\n%s %s\n", a.P.Gray("·"), a.P.Gray(fmt.Sprintf("%s tokens · %.1fs", humanInt(res.TokensUsed), res.DurationSeconds)))
+	}
 	return res, nil
 }
 
@@ -340,16 +363,16 @@ func (a *App) printRunFooter(res *model.TaskResult) {
 		for _, f := range res.Files {
 			a.P.Printf("    %s %s\n", a.P.Gray("-"), f.Path)
 		}
-		if res.Repo == nil {
-			a.P.Hint("commit them with:  synchro commit %s", taskRefHint(res))
+		switch {
+		case res.Repo != nil:
+			a.P.Success("committed as %s  →  %s", res.Repo.Commit, a.P.Dim(res.Repo.Path))
+		case res.RepoUnchanged:
+			a.P.Printf("%s %s\n", a.P.Gray("·"), "files were identical to the last commit, nothing to record")
+		default:
+			a.P.Hint("commit them with:  synchro commit <task-id>")
 		}
 	}
-	if res.Repo != nil {
-		a.P.Success("committed as %s  →  %s", res.Repo.Commit, a.P.Dim(res.Repo.Path))
-	}
 }
-
-func taskRefHint(res *model.TaskResult) string { return "<task-id>" }
 
 // humanInt formats an int with thousands separators.
 func humanInt(n int) string {

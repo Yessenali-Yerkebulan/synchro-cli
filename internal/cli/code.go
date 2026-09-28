@@ -186,7 +186,7 @@ was built. The prompt is explicit that it must not invent anything.`),
 			if err := a.Store.CreateTask(t); err != nil {
 				return err
 			}
-			res, err := a.ExecuteTask(t, reporter, t.Title)
+			res, err := a.ExecuteTaskQuiet(t, reporter, t.Title)
 			if err != nil {
 				return err
 			}
