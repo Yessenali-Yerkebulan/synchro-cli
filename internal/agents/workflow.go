@@ -107,7 +107,6 @@ func (e *Engine) RunWorkflow(ctx context.Context, wf *model.Workflow, input stri
 			}
 		}
 
-		stage := Stage{Key: nodeID, Label: agent.Name, Agent: agent}
 		task := &model.Task{
 			ProjectID:       firstProjectFor(wf.TeamID, e),
 			AssignedAgentID: agent.ID,
@@ -121,25 +120,27 @@ func (e *Engine) RunWorkflow(ctx context.Context, wf *model.Workflow, input stri
 		var res *model.TaskResult
 		var runErr error
 		attempts := 0
+	retry:
 		for attempt := 1; attempt <= maxRetries+1; attempt++ {
 			attempts = attempt
-			if attempt > 1 && onNode != nil {
-				onNode(NodeProgress{NodeID: nodeID, AgentName: agent.Name, Phase: NodeStart, Retrying: true, Attempt: attempt})
-			}
 			res, runErr = e.RunTask(ctx, task, agent)
 			if runErr == nil {
 				break
 			}
-			if attempt <= maxRetries {
-				delay := time.Duration(backoff * float64(int(1)<<uint(attempt-1)) * float64(time.Second))
-				if onNode != nil {
-					onNode(NodeProgress{NodeID: nodeID, AgentName: agent.Name, Phase: NodeStart, Retrying: true, Attempt: attempt})
-				}
-				select {
-				case <-ctx.Done():
-					runErr = ctx.Err()
-				case <-time.After(delay):
-				}
+			if attempt > maxRetries {
+				break
+			}
+			// Report the attempt that just failed, once. The next iteration is
+			// the retry itself and must not announce the same attempt again.
+			if onNode != nil {
+				onNode(NodeProgress{NodeID: nodeID, AgentName: agent.Name, Phase: NodeStart, Retrying: true, Attempt: attempt})
+			}
+			delay := time.Duration(backoff * float64(int(1)<<uint(attempt-1)) * float64(time.Second))
+			select {
+			case <-ctx.Done():
+				runErr = ctx.Err()
+				break retry
+			case <-time.After(delay):
 			}
 		}
 		e.OnDelta = prevDelta
@@ -178,7 +179,9 @@ func (e *Engine) RunWorkflow(ctx context.Context, wf *model.Workflow, input stri
 		exec.NodeResults = append(exec.NodeResults, nr)
 		order = append(order, nodeID)
 		remaining--
-		_ = stage
+		if task.ProjectID != "" {
+			_ = e.Store.AddSpent(task.ProjectID, llmCost(agent, res))
+		}
 
 		if onNode != nil {
 			onNode(NodeProgress{NodeID: nodeID, AgentName: agent.Name, Phase: NodeFinish, Tokens: res.TokensUsed, Attempt: attempts})
