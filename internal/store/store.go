@@ -253,7 +253,7 @@ func (s *Store) UpdateWorkspace(w *model.Workspace) error {
 	return ErrNotFound
 }
 
-// Workspaces returns all workspaces, name-sorted.
+// Workspaces returns all workspaces, oldest first so the order is stable.
 func (s *Store) Workspaces() []model.Workspace {
 	s.mu.Lock()
 	defer s.mu.Unlock()
