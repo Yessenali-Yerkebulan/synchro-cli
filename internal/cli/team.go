@@ -237,7 +237,15 @@ Ollama by default: no key required.`),
 			if err != nil {
 				return fmt.Errorf("no team called %q", args[0])
 			}
-			if !confirm(a, st.opt.Yes, fmt.Sprintf("delete team %q, its %d agents, %d projects and %d workflows?", t.Name, len(a.Store.Agents(t.ID)), len(a.Store.Projects(ws.ID)), len(a.Store.Workflows(t.ID)))) {
+			// Count only this team's projects: DeleteTeam leaves the rest of
+			// the workspace alone, so the prompt must not claim otherwise.
+			teamProjects := 0
+			for _, p := range a.Store.Projects(ws.ID) {
+				if p.TeamID == t.ID {
+					teamProjects++
+				}
+			}
+			if !confirm(a, st.opt.Yes, fmt.Sprintf("delete team %q, its %d agents, %d projects and %d workflows?", t.Name, len(a.Store.Agents(t.ID)), teamProjects, len(a.Store.Workflows(t.ID)))) {
 				a.P.Info("cancelled")
 				return nil
 			}
