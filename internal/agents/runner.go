@@ -161,6 +161,7 @@ func (e *Engine) RunTask(ctx context.Context, task *model.Task, agent *model.Age
 		Model:           res.Model,
 		TokensUsed:      res.TokensUsed,
 		TokensEstimated: res.TokensEstimated,
+		Truncated:       res.Truncated,
 		DurationSeconds: res.Duration.Seconds(),
 	}
 	for _, r := range searchResults {

@@ -13,8 +13,8 @@ import (
 //
 // The web app hardcoded max_tokens: 1024, which truncated longer answers
 // mid-sentence. It is taken from the caller's budget here instead, and
-// finish_reason is surfaced so a silent truncation cannot look like a
-// completed answer.
+// stop_reason is reported as Result.Truncated so a silent truncation cannot
+// look like a completed answer.
 func callAnthropic(ctx context.Context, p Provider, req Request) (*Result, error) {
 	maxTokens := req.MaxTokens
 	if maxTokens <= 0 {
@@ -23,6 +23,9 @@ func callAnthropic(ctx context.Context, p Provider, req Request) (*Result, error
 	payload := map[string]any{
 		"model":      req.Model,
 		"max_tokens": maxTokens,
+		// Without this the API answers with one JSON object, which the SSE
+		// reader below finds nothing in and the answer is lost.
+		"stream": req.Stream,
 		"messages": []map[string]string{
 			{"role": "user", "content": req.Prompt},
 		},
@@ -79,6 +82,7 @@ func callAnthropic(ctx context.Context, p Provider, req Request) (*Result, error
 			}
 		}
 		emit(out.String())
+		res.Truncated = full.StopReason == "max_tokens"
 		res.TokensUsed = full.Usage.InputTokens + full.Usage.OutputTokens
 		res.Output = sb.String()
 		res.TokensEstimated = res.TokensUsed == 0
@@ -103,7 +107,10 @@ func callAnthropic(ctx context.Context, p Provider, req Request) (*Result, error
 		var evt struct {
 			Type  string `json:"type"`
 			Delta struct {
-				Text string `json:"text"`
+				// Text arrives on content_block_delta, StopReason on
+				// message_delta; one object, two shapes.
+				Text       string `json:"text"`
+				StopReason string `json:"stop_reason"`
 			} `json:"delta"`
 			Usage struct {
 				InputTokens  int `json:"input_tokens"`
@@ -125,6 +132,7 @@ func callAnthropic(ctx context.Context, p Provider, req Request) (*Result, error
 			res.TokensUsed += evt.Message.Usage.InputTokens
 		case "message_delta":
 			res.TokensUsed += evt.Usage.OutputTokens
+			res.Truncated = evt.Delta.StopReason == "max_tokens"
 		}
 	}
 	if err := sc.Err(); err != nil {

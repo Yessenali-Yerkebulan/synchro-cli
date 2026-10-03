@@ -209,9 +209,12 @@ type Result struct {
 	// length-based estimate with TokensEstimated set.
 	TokensUsed      int
 	TokensEstimated bool
-	Provider        string
-	Model           string
-	Duration        time.Duration
+	// Truncated is set when the provider stopped because it hit the token
+	// budget, so the answer is incomplete rather than finished.
+	Truncated bool
+	Provider  string
+	Model     string
+	Duration  time.Duration
 }
 
 // Error is a provider-side failure with enough context to act on.
@@ -356,6 +359,11 @@ func estimateTokens(s string) int {
 
 // doJSON performs a JSON request and returns the response for streaming.
 func doJSON(ctx context.Context, client *http.Client, method, url string, headers map[string]string, payload any) (*http.Response, error) {
+	// Call fills a default in, but the provider functions are reachable on
+	// their own and a nil client would panic instead of failing.
+	if client == nil {
+		client = &http.Client{Timeout: 10 * time.Minute}
+	}
 	var body io.Reader
 	if payload != nil {
 		b, err := json.Marshal(payload)
