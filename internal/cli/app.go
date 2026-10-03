@@ -7,6 +7,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/synchro/synchro-cli/internal/agents"
@@ -298,15 +299,22 @@ func (a *App) executeTask(task *model.Task, agent *model.Agent, label string, li
 	// live reports whether to echo the answer as it arrives. Even when it is
 	// off the spinner still shows that work is happening.
 	var stream *ui.Stream
+	var spin *ui.Spinner
+	var stopSpin sync.Once
 	if live {
 		stream = a.P.NewStream(false)
-		e.OnDelta = func(text string) { _, _ = stream.Write([]byte(text)) }
+		e.OnDelta = func(text string) {
+			// The spinner and the streamed answer share one line, so the
+			// first token retires the spinner.
+			stopSpin.Do(func() { spin.Stop() })
+			_, _ = stream.Write([]byte(text))
+		}
 	}
 
 	a.P.Printf("\n%s %s\n", a.P.Bold("▸"), a.P.Bold(label))
 	a.P.Printf("  %s\n", a.P.Gray(fmt.Sprintf("%s · %s/%s", agent.Name, agent.Provider, agent.Model)))
 
-	spin := a.P.StartSpinner("thinking…")
+	spin = a.P.StartSpinner("thinking…")
 	res, err := e.RunTask(a.Ctx, task, agent)
 	spin.Stop()
 	if stream != nil {
@@ -351,6 +359,10 @@ func (a *App) printRunFooter(res *model.TaskResult) {
 		bits = append(bits, fmt.Sprintf("~%s", money(cost)))
 	}
 	a.P.Printf("\n%s %s\n", a.P.Gray("·"), a.P.Gray(strings.Join(bits, " · ")))
+
+	if res.Truncated {
+		a.P.Warn("the model hit its token limit, so this answer is incomplete - raise max_tokens and run it again")
+	}
 
 	if len(res.Sources) > 0 {
 		a.P.Printf("%s %s\n", a.P.Gray("·"), a.P.Gray(fmt.Sprintf("%d source(s) cited", len(res.Sources))))
