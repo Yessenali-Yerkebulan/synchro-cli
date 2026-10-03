@@ -352,6 +352,25 @@ func runFreeform(a *App, text string) error {
 // context switching
 // ---------------------------------------------------------------------------
 
+// resolveRef works out which entry of a numbered list the user meant: the
+// number they were shown, or the name. It reports false for anything else so
+// the caller can fall back to matching an id.
+func resolveRef[T any](list []T, ref string) (T, bool) {
+	var zero T
+	if n, err := strconv.Atoi(ref); err == nil {
+		if n >= 1 && n <= len(list) {
+			return list[n-1], true
+		}
+		return zero, false
+	}
+	for _, item := range list {
+		if anyName(item) == ref {
+			return item, true
+		}
+	}
+	return zero, false
+}
+
 func replSwitchWorkspace(a *App, rest string) error {
 	list := a.Store.Workspaces()
 	if rest == "" {
@@ -362,9 +381,13 @@ func replSwitchWorkspace(a *App, rest string) error {
 			return fmt.Sprintf("%d teams, %d projects", len(a.Store.Teams(w.ID)), len(a.Store.Projects(w.ID)))
 		})
 	}
-	w, err := a.Store.Workspace(rest)
-	if err != nil {
-		return fmt.Errorf("no workspace called %q", rest)
+	w, ok := resolveRef(list, rest)
+	if !ok {
+		found, err := a.Store.Workspace(rest)
+		if err != nil {
+			return fmt.Errorf("no workspace called %q. Try /ws to see the list.", rest)
+		}
+		w = *found
 	}
 	if err := a.SetActive(w.ID, "", "", ""); err != nil {
 		return err
@@ -379,15 +402,19 @@ func replSwitchTeam(a *App, rest string) error {
 	if err != nil {
 		return err
 	}
+	list := a.Store.Teams(ws.ID)
 	if rest == "" {
-		list := a.Store.Teams(ws.ID)
 		return printIndexed(a, "TEAM", "/team", list, func(t model.Team) string {
 			return fmt.Sprintf("%d agents, %d workflows", len(a.Store.Agents(t.ID)), len(a.Store.Workflows(t.ID)))
 		})
 	}
-	t, err := a.Store.Team(rest, ws.ID)
-	if err != nil {
-		return fmt.Errorf("no team called %q in %s", rest, ws.Name)
+	t, ok := resolveRef(list, rest)
+	if !ok {
+		found, ferr := a.Store.Team(rest, ws.ID)
+		if ferr != nil {
+			return fmt.Errorf("no team called %q in %s. Try /team to see the list.", rest, ws.Name)
+		}
+		t = *found
 	}
 	if err := a.SetActive(ws.ID, t.ID, "", ""); err != nil {
 		return err
@@ -408,9 +435,13 @@ func replSwitchAgent(a *App, rest string) error {
 			return fmt.Sprintf("%s - %s/%s", ag.Role, ag.Provider, ag.Model)
 		})
 	}
-	ag, err := a.Store.Agent(rest, team.ID)
-	if err != nil {
-		return fmt.Errorf("no agent called %q in %s", rest, team.Name)
+	ag, ok := resolveRef(list, rest)
+	if !ok {
+		found, ferr := a.Store.Agent(rest, team.ID)
+		if ferr != nil {
+			return fmt.Errorf("no agent called %q in %s. Try /agent to see the list.", rest, team.Name)
+		}
+		ag = *found
 	}
 	if err := a.SetActive("", "", ag.ID, ""); err != nil {
 		return err
@@ -424,8 +455,8 @@ func replSwitchProject(a *App, rest string) error {
 	if err != nil {
 		return err
 	}
+	list := a.Store.Projects(ws.ID)
 	if rest == "" {
-		list := a.Store.Projects(ws.ID)
 		return printIndexed(a, "PROJECT", "/project", list, func(p model.Project) string {
 			return fmt.Sprintf("%d tasks, %d commits", len(a.Store.Tasks(p.ID)), len(repo.Log(a.Store.ReposDir(), p.ID, 1000)))
 		})
@@ -437,9 +468,13 @@ func replSwitchProject(a *App, rest string) error {
 		a.P.Success("project -> none")
 		return nil
 	}
-	p, err := a.Store.Project(rest, ws.ID)
-	if err != nil {
-		return fmt.Errorf("no project called %q", rest)
+	p, ok := resolveRef(list, rest)
+	if !ok {
+		found, ferr := a.Store.Project(rest, ws.ID)
+		if ferr != nil {
+			return fmt.Errorf("no project called %q. Try /project to see the list.", rest)
+		}
+		p = *found
 	}
 	if err := a.SetActive(ws.ID, "", "", p.ID); err != nil {
 		return err
@@ -934,7 +969,7 @@ var helpTable = []helpEntry{
 	{"/help", "show this list"},
 	{"/agents, /agent <n>", "list agents, or switch to one"},
 	{"/team, /team <n>", "list teams, or switch to one"},
-	{"/ws, /ws <name>", "list workspaces, or switch to one"},
+	{"/ws, /ws <n>", "list workspaces, or switch to one"},
 	{"/project, /project <n>", "list projects, or switch to one"},
 	{"/new <name>", "create a project and make it active"},
 	{"/tasks", "list tasks in the current project"},
