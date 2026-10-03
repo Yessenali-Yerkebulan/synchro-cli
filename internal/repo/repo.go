@@ -174,7 +174,11 @@ func WriteFiles(reposDir, projectID string, files []model.CodeFile, commitMsg st
 	if err != nil {
 		return nil, err
 	}
-	return &Info{Commit: strings.TrimSpace(rev)[:12], Path: repoPath}, nil
+	short := strings.TrimSpace(rev)
+	if len(short) > 12 {
+		short = short[:12]
+	}
+	return &Info{Commit: short, Path: repoPath}, nil
 }
 
 // Log returns one line per commit, newest first, or nil if the project has no
