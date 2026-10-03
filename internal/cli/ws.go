@@ -36,10 +36,16 @@ Unlike the web app, there is no limit on how many you can create.`),
 				return err
 			}
 			cfg := a.Store.Config()
+			commitCode := cfg.AutoCommit
+			// An explicit --auto-commit=false has to win over the config
+			// default, or there is no way to opt out.
+			if cmd.Flags().Changed("auto-commit") {
+				commitCode = autoCommit
+			}
 			w := &model.Workspace{
 				Name:                args[0],
 				Description:         desc,
-				AutoCommitAgentCode: autoCommit || cfg.AutoCommit,
+				AutoCommitAgentCode: commitCode,
 			}
 			if err := a.Store.CreateWorkspace(w); err != nil {
 				return err
@@ -150,7 +156,54 @@ Unlike the web app, there is no limit on how many you can create.`),
 		},
 	}
 
-	cmd.AddCommand(newCmd, useCmd, showCmd, rmCmd)
+	var editAutoCommit bool
+	var editDesc string
+	editCmd := &cobra.Command{
+		Use:   "edit <name>",
+		Short: "Change a workspace's settings",
+		Long: strings.TrimSpace(`
+Change the settings that were fixed when the workspace was created:
+
+  synchro-cli ws edit <name> --auto-commit=true
+  synchro-cli ws edit <name> --auto-commit=false
+  synchro-cli ws edit <name> --description "what this workspace is for"`),
+		Args: cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			a, err := st.app()
+			if err != nil {
+				return err
+			}
+			w, err := a.Store.Workspace(args[0])
+			if err != nil {
+				return fmt.Errorf("no workspace called %q", args[0])
+			}
+			changed := false
+			if cmd.Flags().Changed("auto-commit") {
+				w.AutoCommitAgentCode = editAutoCommit
+				changed = true
+			}
+			if cmd.Flags().Changed("description") {
+				w.Description = editDesc
+				changed = true
+			}
+			if !changed {
+				return fmt.Errorf("nothing to change. Pass --auto-commit or --description")
+			}
+			if err := a.Store.UpdateWorkspace(w); err != nil {
+				return err
+			}
+			a.P.Success("workspace %s updated", w.Name)
+			a.P.KeyValue("auto-commit", boolStr(w.AutoCommitAgentCode))
+			if w.Description != "" {
+				a.P.KeyValue("description", w.Description)
+			}
+			return nil
+		},
+	}
+	editCmd.Flags().BoolVar(&editAutoCommit, "auto-commit", false, "automatically commit generated code to git")
+	editCmd.Flags().StringVarP(&editDesc, "description", "d", "", "what this workspace is for")
+
+	cmd.AddCommand(newCmd, useCmd, editCmd, showCmd, rmCmd)
 	return cmd
 }
 
