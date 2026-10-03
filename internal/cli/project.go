@@ -191,8 +191,8 @@ agents is committed into a real git repository at ~/.synchro/repos/<project>.`),
 						name = ag.Name
 					}
 					title := t.Title
-					if len(title) > 40 {
-						title = title[:40] + "..."
+					if r := []rune(title); len(r) > 40 {
+						title = string(r[:40]) + "..."
 					}
 					rows = append(rows, []string{t.ID, string(t.Status), name, title})
 				}
