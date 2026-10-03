@@ -45,11 +45,10 @@ Free options, in order of how little setup they need:
 				provider = args[0]
 			}
 			if all {
-				if provider != "" {
-					provider += " --all"
-				} else {
-					provider = "--all"
-				}
+				provider += " --all"
+			}
+			if refresh {
+				provider += " --refresh"
 			}
 			return printModelTable(a, provider)
 		},

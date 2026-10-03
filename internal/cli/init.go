@@ -123,12 +123,14 @@ func setupProvider(a *App, interactive bool) error {
 	a.P.Success("found %d local model(s) at %s", len(models), base)
 
 	// Prefer a model we know the quality of, if it happens to be installed.
+	// The order matters: the first match wins and nothing later can override it.
 	chosen := names[0]
+preference:
 	for _, want := range []string{"qwen3", "llama3.2", "gemma3", "mistral"} {
 		for _, n := range names {
 			if strings.HasPrefix(n, want) {
 				chosen = n
-				break
+				break preference
 			}
 		}
 	}
