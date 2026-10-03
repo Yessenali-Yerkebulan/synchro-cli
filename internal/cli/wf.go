@@ -246,13 +246,10 @@ func printWorkflowGraph(a *App, wf *model.Workflow) {
 	names := map[string]string{}
 	for _, n := range wf.Graph.Nodes {
 		agentName := n.AgentID
-		role := ""
 		if ag, err := a.Store.Agent(n.AgentID, ""); err == nil {
 			agentName = ag.Name
-			role = string(ag.Role)
 		}
 		names[n.ID] = agentName
-		_ = role
 	}
 	for _, start := range wf.Graph.StartNodes() {
 		var walk func(id string, depth int, seen map[string]bool)
@@ -321,6 +318,15 @@ func (a *App) runWorkflow(wf *model.Workflow, input string) error {
 		if _, serr := a.Store.SaveExecution(exec); serr != nil {
 			a.P.Warn("could not save run history: %v", serr)
 		}
+	}
+
+	// A graph that never validated produces no run at all; say so instead of
+	// walking an empty result set.
+	if exec == nil {
+		if err != nil {
+			return err
+		}
+		return fmt.Errorf("workflow %q produced no run", wf.Name)
 	}
 
 	a.P.Rule()
